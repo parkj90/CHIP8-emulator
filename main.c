@@ -4,13 +4,17 @@
 
 int main(void) {
     FILE *cnct4 = fopen("../c8games/CONNECT4", "r");
-
     if (cnct4 == NULL) {
-        printf("error opening file\n");
+        perror("Error: ");
         return -1;
     }
 
-    rombuffer_t *cnct4_opcodes = rombuffer_getOpcodes(cnct4);
+    rombuffer_t *cnct4_opcodes = rombuffer_read(cnct4);
+    if (cnct4_opcodes == NULL) {
+        perror("Error: ");
+        return -1;
+    }
+
     disassembler_dump(cnct4_opcodes);
     rombuffer_free(cnct4_opcodes);
     
