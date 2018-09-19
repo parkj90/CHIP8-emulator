@@ -3,7 +3,7 @@
 #include <assert.h>
 
 int main(void) {
-    FILE *new_file = fopen("./c8games/CONNECT4", "r");
+    FILE *new_file = fopen("../c8games/CONNECT4", "r");
 
     int c;
     uint16_t d;

@@ -1,330 +1,354 @@
 //disassembler.c
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdint.h>
+#include "rombuffer.h"
 #include "disassembler.h"
 
-#define MAX_ROM_SIZE 200
+struct instruction {
+    uint16_t mask;
+    uint16_t id;
+    char *mnemonic;
 
-struct opcode {
-    uint16_t bitmask;
-    uint16_t filter;
-    char *instruction;
+    size_t operand_count;
+    uint16_t operand_enums[3];
 };
 
-struct romBuffer{
-    uint16_t *opcodes;
-    uint32_t length;
-};
-
-static int16_t var_masks[5] = {
-    0x0F00,             //x
-    0x00F0,             //y
-    0x000F,             //n
-    0x00FF,             //k or kk
-    0x0FFF              //a or nnn
+static uint16_t operand_masks[5][2] = {
+    {0x0F00, 8},        //x
+    {0x00F0, 4},        //y
+    {0x000F, 0},        //n
+    {0x00FF, 0},        //kk
+    {0x0FFF, 0}         //nnn
 };
 
 //sample opcode table
-static opcode_t opcode_table[35] = {
+static const instruction_t instruction_table[] = {
     {
         0xF000,
         0x0000,
-        "SYS a"
+        "SYS ",
+        1,
+        {4},
     },
     {
         0x00F0,
         0x00E0,
-        "CLS"
+        "CLS",
+        0,
+        {}
     },
     {
         0x00FF,
         0x00EE,
-        "RET"
+        "RET",
+        0,
+        {}
     },
     {
         0xF000,
         0x1000,
-        "JP a"
+        "JP ",
+        1,
+        {4}
     },
     {
         0xF000,
         0x2000,
-        "CALL a"
+        "CALL ",
+        1,
+        {4}
     },
     {
         0xF000,
         0x3000,
-        "SE Vx, k"
+        "SE ",
+        2,
+        {0, 3}
     },
     {
         0xF000,
         0x4000,
-        "SNE Vx, k"
+        "SNE ",
+        2,
+        {0, 3}
     },
     {
         0xF000,
         0x5000,
-        "SE Vx, Vy"
+        "SE ",
+        2,
+        {0, 1}
     },
     {
         0xF000,
         0x6000,
-        "LD Vx, k"
+        "LD ",
+        2,
+        {0, 3}
     },
     {
         0xF000,
         0x7000,
-        "ADD Vx, k"
+        "ADD ",
+        2,
+        {0, 3}
     },
     {
         0xF00F,
         0x8000,
-        "LD Vx, Vy"
+        "LD ",
+        2,
+        {0, 1}
     },
     {
         0xF00F,
         0x8001,
-        "OR Vx, Vy"
+        "OR ",
+        2,
+        {0, 1}
     },
     {
         0xF00F,
         0x8002,
-        "AND Vx, Vy"
+        "AND ",
+        2,
+        {0, 1}
     },
     {
         0xF00F,
         0x8003,
-        "XOR Vx, Vy"
+        "XOR ",
+        2,
+        {0, 1}
     },
     {
         0xF00F,
         0x8004,
-        "ADD Vx, Vy"
+        "ADD ",
+        2,
+        {0, 1}
     },
     {
         0xF00F,
         0x8005,
-        "SUB Vx, Vy"
+        "SUB ",
+        2,
+        {0, 1}
     },
     {
         0xF00F,
         0x8006,
-        "SHR Vx {, Vy}"
+        "SHR ",
+        2,
+        {0, 1}
     },
     {
         0xF00F,
         0x8007,
-        "SUBN Vx, Vy"
+        "SUBN ",
+        2,
+        {0, 1}
     },
     {
         0xF00F,
         0x800E,
-        "SHL Vx {, Vy}"
+        "SHL ",
+        2,
+        {0, 1}
     },
     {
         0xF00F,
         0x9000,
-        "SNE Vx, Vy"
+        "SNE ",
+        2,
+        {0, 1}
     },
     {
         0xF000,
         0xA000,
-        "LD I, a"
+        "LD ",
+        2,
+        {5, 4}
     },
     {
         0xF000,
         0xB000,
-        "JP V0, a"
+        "JP ",
+        2,
+        {6, 4}
     },
     {
         0xF000,
         0xC000,
-        "RND Vx, k"
+        "RND ",
+        2,
+        {0, 3}
     },
     {
         0xF000,
         0xD000,
-        "DRW Vx, Vy, n"
+        "DRW ",
+        3,
+        {0, 1, 2}
     },
     {
         0xF0FF,
         0xE09E,
-        "SKP Vx"
+        "SKP ",
+        1,
+        {0}
     },
     {
         0xF0FF,
         0xE0A1,
-        "SKNP Vx"
+        "SKNP ",
+        1,
+        {0}
     },
     {
         0xF0FF,
         0xF007,
-        "LD Vx, DT"
+        "LD ",
+        2,
+        {0, 7}
     },
     {
         0xF0FF,
         0xF00A,
-        "LD Vx, K"
+        "LD ",
+        2,
+        {0, 9}
     },
     {
         0xF0FF,
         0xF015,
-        "LD DT, Vx"
+        "LD ",
+        2,
+        {7, 0}
     },
     {
         0xF0FF,
         0xF018,
-        "LD ST, Vx"
+        "LD ",
+        2,
+        {8, 0}
     },
     {
         0xF0FF,
         0xF01E,
-        "ADD I, Vx"
+        "ADD ",
+        2,
+        {5, 0}
     },
     {
         0xF0FF,
         0xF029,
-        "LD F, Vx"
+        "LD ",
+        2,
+        {5, 0}
     },
     {
         0xF0FF,
         0xF033,
-        "LD B, Vx"
+        "LD ",
+        2,
+        {5, 0}
     },
     {
         0xF0FF,
         0xF055,
-        "LD [I], Vx"
+        "LD ",
+        2,
+        {5, 0}
     },
     {
         0xF0FF,
         0xF065,
-        "LD Vx, [I]"
+        "LD ",
+        2,
+        {0, 5}
     },
+    {
+        0x0000,
+        0x0000,
+        "no matching instruction",
+        0,
+        {}
+    }
 };
 
-int main(void) {
-    FILE *cnct4 = fopen("./c8games/CONNECT4", "r");
+static const int instruction_table_size = sizeof(instruction_table)/sizeof(instruction_table[0]);
 
-    if (cnct4 == NULL) {
-        printf("error opening file\n");
-        return -1;
-    }
-
-    romBuffer_t *cnct4_opcodes = CHIP8_getOpcodes(cnct4);
-    disassembler_dump(cnct4_opcodes);
-    romBuffer_free(cnct4_opcodes);
-    
-    return 0;
-}
-
-romBuffer_t *CHIP8_getOpcodes(FILE *game_f) {
-    if (game_f == NULL) {
-        return NULL;
-    }
-
-    uint32_t byte_count = 0;
-    uint32_t byte_buffer;
-    uint16_t opcode;
-
-    romBuffer_t *rom = malloc(sizeof(romBuffer_t));
-    if (rom == NULL) {
-        return NULL;
-    }
-
-    rom->opcodes = malloc(MAX_ROM_SIZE * sizeof(uint16_t));
-    if (rom->opcodes == NULL) {
-        return NULL;
-    }
-
-    while ((byte_buffer = fgetc(game_f)) != EOF) {
-        byte_count ++;
-        if (byte_count % 2) {
-            opcode = byte_buffer << 8;
-        } else {
-            opcode ^= byte_buffer;
-            rom->opcodes[byte_count / 2 - 1] = opcode;
-        }
-    }
-
-    rom->length = byte_count / 2;
-    return rom;
-}
-
-void romBuffer_free(romBuffer_t *rom) {
-    if (rom == NULL) {
-        return;
-    }
-
-    free(rom->opcodes);
-    free(rom);
-}
-
-void disassembler_dump(const romBuffer_t *opcodes) {
+void disassembler_dump(const rombuffer_t *opcodes) {
     if (opcodes == NULL) {
         return;
     }
 
     uint16_t opcode;
-    opcode_t *id;
+    const instruction_t *instruction;
     for (int i = 0; i < opcodes->length; i++) {
         opcode = opcodes->opcodes[i];
         printf("opcode #%02d: %x    ", i, opcode);
-        id = disassembler_filter(opcode);
-        if (id == NULL) {
-            printf("no matching opcode\n");
-            continue;
-        }
-        disassembler_print(opcode, id->instruction);
+        instruction = disassembler_lookup(opcode);
+        disassembler_print(opcode, instruction);
     }
 }
 
-opcode_t *disassembler_filter(uint16_t opcode) {
-    opcode_t *lookup;
+const instruction_t *disassembler_lookup(uint16_t opcode) {
+    const instruction_t *instruction;
 
-    for (int i = 0; i < 35; i++) {
-        lookup = opcode_table + i;
+    for (int i = 0; i < instruction_table_size; i++) {
+        instruction = &instruction_table[i];
 
-        if ((opcode & lookup->bitmask) == lookup->filter) {
-            return lookup;
+        if ((opcode & instruction->mask) == instruction->id) {
+            return instruction;
         }
     }
-
-    return NULL;
 }
 
-bool disassembler_print(uint16_t opcode, const char *instruction) {
-    char c;
-    uint16_t variable;
-    for (int i = 0; instruction[i] != '\0'; i++) {
-        c = instruction[i];
+bool disassembler_print(uint16_t opcode, const instruction_t *instruction) {
+    uint16_t enumeration;
+    uint16_t operand;
 
-        if (c >= 97 && c <= 172) {
-            variable = disassembler_fetchVar(c, opcode);
-            printf("%x", variable);
-        } else {
-            printf("%c", c);
+    printf("%s", instruction->mnemonic);
+    for (size_t i = 0; i < instruction->operand_count; i++) {
+        enumeration = instruction->operand_enums[i];
+
+        switch(enumeration) {
+            case 5:
+                printf("I");
+                break;
+            case 6:
+                printf("V0");
+                break;
+            case 7:
+                printf("DT");
+                break;
+            case 8:
+                printf("ST");
+                break;
+            case 9:
+                printf("K");
+                break;
+            default:
+                operand = disassembler_fetch_operand(opcode, enumeration);
+
+                if (enumeration < 2) {
+                    printf("V");
+                }
+                printf("%x", operand);
+        }
+
+        if (i < instruction->operand_count - 1) {
+            printf(", ");
         }
     }
     printf("\n");
 }
 
-uint16_t disassembler_fetchVar(char type, uint16_t opcode) {
-    uint16_t variable;
+uint16_t disassembler_fetch_operand(uint16_t opcode, uint16_t enumeration) {
+    uint16_t operand = opcode & operand_masks[enumeration][0] >> operand_masks[enumeration][1];
 
-    if (type == 'x') {
-       variable = (opcode & var_masks[0]) >> 8;
-    } else if (type == 'y') {
-       variable = (opcode & var_masks[1]) >> 4;
-    } else if (type == 'n') {
-       variable = opcode & var_masks[2];
-    } else if (type == 'k') {
-       variable = opcode & var_masks[3];
-    } else if (type == 'a') {
-       variable = opcode & var_masks[4];
-    }
-
-    return variable;
+    return operand;
 }
