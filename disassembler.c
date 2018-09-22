@@ -8,16 +8,7 @@
 
 #define MAX_FORMATTED_OP_SIZE 6
 
-typedef struct instruction {
-    uint16_t mask;
-    uint16_t id;
-    char *mnemonic;
-
-    size_t operand_count;
-    uint16_t operand_types[3];
-} instruction_t;
-
-enum operand_id {
+typedef enum operand_type {
     OPERAND_VX  = 0,
     OPERAND_VY  = 1,
     OPERAND_N   = 2,
@@ -28,18 +19,31 @@ enum operand_id {
     OPERAND_DT  = 7,
     OPERAND_ST  = 8,
     OPERAND_K   = 9
-};
+} operand_type_t;
+
+typedef struct instruction_info {
+    uint16_t mask;
+    uint16_t id;
+    char *mnemonic;
+
+    size_t operand_count;
+    operand_type_t operand_types[3];
+} instruction_info_t;
+
+typedef struct instruction {
+    const instruction_info_t *instruction_info;
+    uint16_t operands[3];
+} instruction_t;
 
 static uint16_t operand_masks[][2] = {
-    {0x0F00, 8},        //x
-    {0x00F0, 4},        //y
-    {0x000F, 0},        //n
-    {0x00FF, 0},        //kk
-    {0x0FFF, 0}         //nnn
+    [OPERAND_VX]  = {0x0F00, 8},        //x
+    [OPERAND_VY]  = {0x00F0, 4},        //y
+    [OPERAND_N]   = {0x000F, 0},        //n
+    [OPERAND_K]   = {0x00FF, 0},        //kk
+    [OPERAND_NNN] = {0x0FFF, 0}         //nnn
 };
 
-//sample opcode table
-static const instruction_t instruction_table[] = {
+static const instruction_info_t instruction_info_table[] = {
     {
         0xF000,
         0x0000,
@@ -294,7 +298,7 @@ static const instruction_t instruction_table[] = {
     }
 };
 
-static const int instruction_table_size = sizeof(instruction_table)/sizeof(instruction_table[0]);
+static const int instruction_info_table_size = sizeof(instruction_info_table)/sizeof(instruction_info_table[0]);
 
 void disassembler_dump(const rombuffer_t *rom) {
     if (rom == NULL) {
@@ -305,94 +309,91 @@ void disassembler_dump(const rombuffer_t *rom) {
         uint16_t opcode = rom->data[i];
         printf("0x%03x: %04x    ", (unsigned int)i, opcode);
 
-        const instruction_t *instruction = disassembler_lookup(opcode);
+        const instruction_info_t *instruction_info = disassembler_lookup(opcode);
 
-        uint16_t operands[instruction->operand_count];
-        disassembler_fetch_operands(operands, opcode, instruction);
+        instruction_t instruction;
+        disassembler_disassemble(&instruction, opcode, instruction_info);
 
-        size_t formatted_operands_size = 12;
-        char formatted_operands[formatted_operands_size];
-        disassembler_format_operands(formatted_operands, formatted_operands_size, operands, instruction);
-
-        size_t formatted_instruction_size = 20;
-        char formatted_instruction[formatted_instruction_size];
-        disassembler_format(formatted_instruction, formatted_instruction_size, instruction->mnemonic, formatted_operands);
+        char formatted_instruction[20];
+        disassembler_format(formatted_instruction, 20, &instruction);
 
         printf("%s\n", formatted_instruction);
     }
 }
 
-const instruction_t *disassembler_lookup(uint16_t opcode) {
-    for (int i = 0; i < instruction_table_size; i++) {
-        const instruction_t *instruction = &instruction_table[i];
+const instruction_info_t *disassembler_lookup(uint16_t opcode) {
+    for (int i = 0; i < instruction_info_table_size; i++) {
+        const instruction_info_t *instruction_info = &instruction_info_table[i];
 
-        if ((opcode & instruction->mask) == instruction->id) {
-            return instruction;
+        if ((opcode & instruction_info->mask) == instruction_info->id) {
+            return instruction_info;
         }
     }
     
     return NULL;
 }
 
-void disassembler_fetch_operands(uint16_t *operands, uint16_t opcode, const instruction_t *instruction) {
-    if (operands == NULL) {
+void disassembler_disassemble(instruction_t *instruction, uint16_t opcode, const instruction_info_t *instruction_info) {
+    if (instruction == NULL) {
         return;
     }
+    instruction->instruction_info = instruction_info;
 
-    for (size_t i = 0; i < instruction->operand_count; i++) {
-        uint16_t mask = operand_masks[instruction->operand_types[i]][0];
-        uint16_t shift = operand_masks[instruction->operand_types[i]][1];
-        operands[i] = opcode & mask >> shift;
+    for (size_t i = 0; i < instruction_info->operand_count; i++) {
+        uint16_t mask = operand_masks[instruction_info->operand_types[i]][0];
+        uint16_t shift = operand_masks[instruction_info->operand_types[i]][1];
+        instruction->operands[i] = opcode & mask >> shift;
     }
 }
 
-void disassembler_format_operands(char *formatted_operands, size_t size, const uint16_t *operands, const instruction_t *instruction) {
-    for (size_t i = 0; i < instruction->operand_count; i++) {
+void disassembler_format(char *formatted_instruction, size_t size, const instruction_t *instruction) {
+    const instruction_info_t *instruction_info = instruction->instruction_info;
+    size_t form_inst_size = snprintf(formatted_instruction, size, "%s", instruction_info->mnemonic);
+    
+    const uint16_t *operands = instruction->operands;
+    for (size_t i = 0; i < instruction_info->operand_count; i++) {
         char formatted_operand[MAX_FORMATTED_OP_SIZE];
-        switch (instruction->operand_types[i]) {
+        size_t form_op_size;
+        switch (instruction_info->operand_types[i]) {
             case OPERAND_VX:
-                snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " V%x", operands[i]);
+                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " V%x", operands[i]);
                 break;
             case OPERAND_VY:
-                snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " V%x", operands[i]);
+                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " V%x", operands[i]);
                 break;
             case OPERAND_N:
-                snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " %x", operands[i]);
+                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " %x", operands[i]);
                 break;
             case OPERAND_KK:
-                snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " %x", operands[i]);
+                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " %x", operands[i]);
                 break;
             case OPERAND_NNN:
-                snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " %x", operands[i]);
+                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " %x", operands[i]);
                 break;
             case OPERAND_I:
-                snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " I");
+                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " I");
                 break;
             case OPERAND_V0:
-                snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " V0");
+                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " V0");
                 break;
             case OPERAND_DT:
-                snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " DT");
+                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " DT");
                 break;
             case OPERAND_ST:
-                snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " ST");
+                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " ST");
                 break;
             case OPERAND_K:
-                snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " K");
+                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " K");
                 break;
             default:
                 perror("no matching operand enum");
                 return;
         }
-        if (i < instruction->operand_count - 1) {
-            size_t formatted_op_size = strlen(formatted_operand);
-            snprintf(formatted_operand + formatted_op_size, MAX_FORMATTED_OP_SIZE - formatted_op_size, ",");
-        }
-        size_t formatted_ops_size = strlen(formatted_operands);
-        snprintf(formatted_operands + formatted_ops_size, size - formatted_ops_size, "%s", formatted_operand);
-    }
-}
 
-void disassembler_format(char *formatted_instruction, size_t size, const char *mnemonic, const char *formatted_operands) {
-    snprintf(formatted_instruction, size, "%s%s", mnemonic, formatted_operands);
+        if (i < instruction_info->operand_count - 1) {
+            form_op_size = snprintf(formatted_operand + form_op_size, MAX_FORMATTED_OP_SIZE - form_op_size, ",");
+        }
+
+        form_inst_size = snprintf(formatted_instruction + form_inst_size, size - form_inst_size, "%s", formatted_operand);
+    }
 }
