@@ -7,18 +7,20 @@
 #include "disassembler.h"
 
 #define MAX_FORMATTED_OP_SIZE 6
+#define FORMATTED_INSTRUCTION_SIZE 20
 
 typedef enum operand_type {
-    OPERAND_VX  = 0,
-    OPERAND_VY  = 1,
-    OPERAND_N   = 2,
-    OPERAND_KK  = 3,
-    OPERAND_NNN = 4,
-    OPERAND_I   = 5,
-    OPERAND_V0  = 6,
-    OPERAND_DT  = 7,
-    OPERAND_ST  = 8,
-    OPERAND_K   = 9
+    OPERAND_VX    = 0,
+    OPERAND_VY    = 1,
+    OPERAND_N     = 2,
+    OPERAND_KK    = 3,
+    OPERAND_NNN   = 4,
+    OPERAND_I     = 5,
+    OPERAND_V0    = 6,
+    OPERAND_DT    = 7,
+    OPERAND_ST    = 8,
+    OPERAND_K     = 9,
+    OPERAND_DATA  = 10
 } operand_type_t;
 
 typedef struct instruction_info {
@@ -36,11 +38,12 @@ typedef struct instruction {
 } instruction_t;
 
 static uint16_t operand_masks[][2] = {
-    [OPERAND_VX]  = {0x0F00, 8},        //x
-    [OPERAND_VY]  = {0x00F0, 4},        //y
-    [OPERAND_N]   = {0x000F, 0},        //n
-    [OPERAND_K]   = {0x00FF, 0},        //kk
-    [OPERAND_NNN] = {0x0FFF, 0}         //nnn
+    [OPERAND_VX]    = {0x0F00, 8},        //x
+    [OPERAND_VY]    = {0x00F0, 4},        //y
+    [OPERAND_N]     = {0x000F, 0},        //n
+    [OPERAND_K]     = {0x00FF, 0},        //kk
+    [OPERAND_NNN]   = {0x0FFF, 0},        //nnn
+    [OPERAND_DATA]  = {0xFFFF, 0}
 };
 
 static const instruction_info_t instruction_info_table[] = {
@@ -292,9 +295,9 @@ static const instruction_info_t instruction_info_table[] = {
     {
         0x0000,
         0x0000,
-        "no matching instruction",
-        0,
-        {}
+        ".data",
+        1,
+        {OPERAND_DATA}
     }
 };
 
@@ -309,13 +312,11 @@ void disassembler_dump(const rombuffer_t *rom) {
         uint16_t opcode = rom->data[i];
         printf("0x%03x: %04x    ", (unsigned int)i, opcode);
 
-        const instruction_info_t *instruction_info = disassembler_lookup(opcode);
-
         instruction_t instruction;
-        disassembler_disassemble(&instruction, opcode, instruction_info);
+        disassembler_disassemble(&instruction, opcode);
 
-        char formatted_instruction[20];
-        disassembler_format(formatted_instruction, 20, &instruction);
+        char formatted_instruction[FORMATTED_INSTRUCTION_SIZE];
+        disassembler_format(formatted_instruction, FORMATTED_INSTRUCTION_SIZE, &instruction);
 
         printf("%s\n", formatted_instruction);
     }
@@ -333,10 +334,12 @@ const instruction_info_t *disassembler_lookup(uint16_t opcode) {
     return NULL;
 }
 
-void disassembler_disassemble(instruction_t *instruction, uint16_t opcode, const instruction_info_t *instruction_info) {
+void disassembler_disassemble(instruction_t *instruction, uint16_t opcode) {
     if (instruction == NULL) {
         return;
     }
+
+    const instruction_info_t *instruction_info = disassembler_lookup(opcode);
     instruction->instruction_info = instruction_info;
 
     for (size_t i = 0; i < instruction_info->operand_count; i++) {
@@ -385,6 +388,9 @@ void disassembler_format(char *formatted_instruction, size_t size, const instruc
             case OPERAND_K:
                 form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " K");
                 break;
+            case OPERAND_DATA:
+                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " %x", operands[i]);
+                break;
             default:
                 perror("no matching operand enum");
                 return;
@@ -394,6 +400,10 @@ void disassembler_format(char *formatted_instruction, size_t size, const instruc
             form_op_size = snprintf(formatted_operand + form_op_size, MAX_FORMATTED_OP_SIZE - form_op_size, ",");
         }
 
+        if (size < form_inst_size) {
+            perror("formatted_array is insufficient size");
+            return;
+        }
         form_inst_size = snprintf(formatted_instruction + form_inst_size, size - form_inst_size, "%s", formatted_operand);
     }
 }
