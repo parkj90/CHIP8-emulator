@@ -301,11 +301,11 @@ static const instruction_info_t instruction_info_table[] = {
     }
 };
 
-static const int instruction_info_table_size = sizeof(instruction_info_table)/sizeof(instruction_info_table[0]);
+static const int instruction_info_table_size = sizeof(instruction_info_table) / sizeof(instruction_info_table[0]);
 
-void disassembler_dump(const rombuffer_t *rom) {
+int disassembler_dump(const rombuffer_t *rom) {
     if (rom == NULL) {
-        return;
+        return -1;
     }
 
     for (size_t i = 0; i < rom->length; i++) {
@@ -316,27 +316,20 @@ void disassembler_dump(const rombuffer_t *rom) {
         disassembler_disassemble(&instruction, opcode);
 
         char formatted_instruction[FORMATTED_INSTRUCTION_SIZE];
-        disassembler_format(formatted_instruction, FORMATTED_INSTRUCTION_SIZE, &instruction);
+        int format_error = disassembler_format(formatted_instruction, sizeof(formatted_instruction), &instruction);
+        if (format_error) {
+            return format_error;
+        }
 
         printf("%s\n", formatted_instruction);
     }
+
+    return 0;
 }
 
-const instruction_info_t *disassembler_lookup(uint16_t opcode) {
-    for (int i = 0; i < instruction_info_table_size; i++) {
-        const instruction_info_t *instruction_info = &instruction_info_table[i];
-
-        if ((opcode & instruction_info->mask) == instruction_info->id) {
-            return instruction_info;
-        }
-    }
-    
-    return NULL;
-}
-
-void disassembler_disassemble(instruction_t *instruction, uint16_t opcode) {
+int disassembler_disassemble(instruction_t *instruction, uint16_t opcode) {
     if (instruction == NULL) {
-        return;
+        return -1;
     }
 
     const instruction_info_t *instruction_info = disassembler_lookup(opcode);
@@ -347,9 +340,11 @@ void disassembler_disassemble(instruction_t *instruction, uint16_t opcode) {
         uint16_t shift = operand_masks[instruction_info->operand_types[i]][1];
         instruction->operands[i] = opcode & mask >> shift;
     }
+
+    return 0;
 }
 
-void disassembler_format(char *formatted_instruction, size_t size, const instruction_t *instruction) {
+int disassembler_format(char *formatted_instruction, size_t size, const instruction_t *instruction) {
     const instruction_info_t *instruction_info = instruction->instruction_info;
     size_t form_inst_size = snprintf(formatted_instruction, size, "%s", instruction_info->mnemonic);
     
@@ -392,8 +387,7 @@ void disassembler_format(char *formatted_instruction, size_t size, const instruc
                 form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " %x", operands[i]);
                 break;
             default:
-                perror("no matching operand enum");
-                return;
+                return -3;
         }
 
         if (i < instruction_info->operand_count - 1) {
@@ -401,9 +395,22 @@ void disassembler_format(char *formatted_instruction, size_t size, const instruc
         }
 
         if (size < form_inst_size) {
-            perror("formatted_array is insufficient size");
-            return;
+            return -2;
         }
         form_inst_size = snprintf(formatted_instruction + form_inst_size, size - form_inst_size, "%s", formatted_operand);
     }
+
+    return 0;
+}
+
+const instruction_info_t *disassembler_lookup(uint16_t opcode) {
+    for (int i = 0; i < instruction_info_table_size; i++) {
+        const instruction_info_t *instruction_info = &instruction_info_table[i];
+
+        if ((opcode & instruction_info->mask) == instruction_info->id) {
+            return instruction_info;
+        }
+    }
+    
+    return NULL;
 }

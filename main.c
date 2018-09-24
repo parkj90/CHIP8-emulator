@@ -15,7 +15,10 @@ int main(void) {
         return -1;
     }
 
-    disassembler_dump(cnct4_opcodes);
+    if (disassembler_dump(cnct4_opcodes)) {
+        return -1;
+    }
+
     rombuffer_free(cnct4_opcodes);
     
     return 0;
