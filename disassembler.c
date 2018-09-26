@@ -308,9 +308,8 @@ int disassembler_dump(const rombuffer_t *rom) {
         return -1;
     }
 
-    for (size_t i = 0; i < rom->length; i++) {
+    for (unsigned int i = 0; i < rom->length; i++) {
         uint16_t opcode = rom->data[i];
-        printf("0x%03x: %04x    ", (unsigned int)i, opcode);
 
         instruction_t instruction;
         disassembler_disassemble(&instruction, opcode);
@@ -321,7 +320,7 @@ int disassembler_dump(const rombuffer_t *rom) {
             return format_error;
         }
 
-        printf("%s\n", formatted_instruction);
+        printf("0x%03x: %04x    %s\n", i, opcode, formatted_instruction);
     }
 
     return 0;
@@ -350,6 +349,10 @@ int disassembler_format(char *formatted_instruction, size_t size, const instruct
     
     const uint16_t *operands = instruction->operands;
     for (size_t i = 0; i < instruction_info->operand_count; i++) {
+        if (size < form_inst_size) {
+            return -2;
+        }
+
         char formatted_operand[MAX_FORMATTED_OP_SIZE];
         size_t form_op_size;
         switch (instruction_info->operand_types[i]) {
@@ -394,9 +397,6 @@ int disassembler_format(char *formatted_instruction, size_t size, const instruct
             form_op_size = snprintf(formatted_operand + form_op_size, MAX_FORMATTED_OP_SIZE - form_op_size, ",");
         }
 
-        if (size < form_inst_size) {
-            return -2;
-        }
         form_inst_size = snprintf(formatted_instruction + form_inst_size, size - form_inst_size, "%s", formatted_operand);
     }
 
