@@ -23,7 +23,17 @@ typedef enum operand_type {
     OPERAND_DATA  = 10
 } operand_type_t;
 
+typedef enum instruction_type {
+    SYS_NNN = 0,
+    CLS = 1,
+    RET = 2,
+    JP_NNN = 3,
+    CALL_NNN = 4,
+    //fix me, add rest of enums
+} instruction_type_t;
+
 typedef struct instruction_info {
+    //instruction_type_t instruction_type;
     uint16_t mask;
     uint16_t id;
     char *mnemonic;
@@ -31,11 +41,6 @@ typedef struct instruction_info {
     size_t operand_count;
     operand_type_t operand_types[3];
 } instruction_info_t;
-
-typedef struct instruction {
-    const instruction_info_t *instruction_info;
-    uint16_t operands[3];
-} instruction_t;
 
 static uint16_t operand_masks[][2] = {
     [OPERAND_VX]    = {0x0F00, 8},        //x
@@ -48,6 +53,7 @@ static uint16_t operand_masks[][2] = {
 
 static const instruction_info_t instruction_info_table[] = {
     {
+        //SYS_NNN,
         0xF000,
         0x0000,
         "SYS",

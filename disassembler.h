@@ -5,9 +5,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct instruction_info instruction_info_t;
-typedef struct instruction instruction_t;
 typedef enum operand_type operand_type_t;
+typedef enum instruction_type instruction_type_t;
+typedef struct instruction_info instruction_info_t;
+typedef struct instruction {
+    const instruction_info_t *instruction_info;
+    uint16_t operands[3];
+} instruction_t;
 
 //for methods returning int:
 //      -1: pointer is NULL
