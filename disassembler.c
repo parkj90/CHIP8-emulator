@@ -335,7 +335,7 @@ int disassembler_dump(const rombuffer_t *rom) {
     return 0;
 }
 
-int disassembler_disassemble(instruction_t *instruction, uint16_t opcode) {
+int disassembler_disassemble(instruction_t *instruction, const uint16_t opcode) {
     if (instruction == NULL) {
         return -1;
     }
