@@ -130,10 +130,9 @@ int cpu_reset(cpu_t *cpu) {
 
     cpu->pc = 0x200;
     for (size_t i = 0; i < cpu->rom->length; i++) {
-        cpu->memory[cpu->pc++] = (uint8_t)(cpu->rom->data[i] & 0xFF00) >> 8; 
-        cpu->memory[cpu->pc++] = (uint8_t)(cpu->rom->data[i] & 0x00FF); 
+        cpu->memory[0x200 + (i * 2)] = (uint8_t)(cpu->rom->data[i] & 0xFF00) >> 8; 
+        cpu->memory[0x200 + (i * 2) + 1] = (uint8_t)(cpu->rom->data[i] & 0x00FF); 
     }
-    cpu->pc = 0x200;
 
     return 0;
 }
@@ -161,7 +160,7 @@ void cpu_free(cpu_t *cpu) {
 static void cpu_execute(cpu_t *cpu) {
     //fetch
     const uint16_t opcode = cpu_fetch_opcode(cpu);
-    //disassemble
+    //decode
     instruction_t instruction;
     disassembler_disassemble(&instruction, opcode);
     //execute
@@ -172,8 +171,8 @@ static void cpu_execute(cpu_t *cpu) {
 }
 
 static const uint16_t cpu_fetch_opcode(cpu_t *cpu) {
-    uint16_t opcode = cpu->memory[cpu->pc++] << 8;
-    opcode |= cpu->memory[cpu->pc++];
+    uint16_t opcode = cpu->memory[cpu->pc] << 8 | cpu->memory[cpu->pc + 1];
+    cpu->pc += 2;
 
     return opcode;
 }
