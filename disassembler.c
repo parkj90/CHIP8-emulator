@@ -9,58 +9,27 @@
 #define MAX_FORMATTED_OP_SIZE 6
 #define FORMATTED_INSTRUCTION_SIZE 20
 
-typedef enum operand_type {
-    OPERAND_VX    = 0,
-    OPERAND_VY    = 1,
-    OPERAND_N     = 2,
-    OPERAND_KK    = 3,
-    OPERAND_NNN   = 4,
-    OPERAND_I     = 5,
-    OPERAND_V0    = 6,
-    OPERAND_DT    = 7,
-    OPERAND_ST    = 8,
-    OPERAND_K     = 9,
-    OPERAND_DATA  = 10
-} operand_type_t;
-
-typedef enum instruction_type {
-    SYS_NNN = 0,
-    CLS = 1,
-    RET = 2,
-    JP_NNN = 3,
-    CALL_NNN = 4,
-    //fix me, add rest of enums
-} instruction_type_t;
-
-typedef struct instruction_info {
-    //instruction_type_t instruction_type;
-    uint16_t mask;
-    uint16_t id;
-    char *mnemonic;
-
-    size_t operand_count;
-    operand_type_t operand_types[3];
-} instruction_info_t;
-
-static uint16_t operand_masks[][2] = {
+static const uint16_t operand_masks[][2] = {
     [OPERAND_VX]    = {0x0F00, 8},        //x
     [OPERAND_VY]    = {0x00F0, 4},        //y
     [OPERAND_N]     = {0x000F, 0},        //n
-    [OPERAND_K]     = {0x00FF, 0},        //kk
+    [OPERAND_KK]     = {0x00FF, 0},        //kk
     [OPERAND_NNN]   = {0x0FFF, 0},        //nnn
     [OPERAND_DATA]  = {0xFFFF, 0}
 };
 
+//fix me add in the other enums
 static const instruction_info_t instruction_info_table[] = {
     {
-        //SYS_NNN,
+        INSTRUCTION_SYS_NNN,
         0xF000,
         0x0000,
         "SYS",
         1,
-        {OPERAND_NNN},
+        {OPERAND_NNN}
     },
     {
+        INSTRUCTION_CLS,
         0x00F0,
         0x00E0,
         "CLS",
@@ -68,6 +37,7 @@ static const instruction_info_t instruction_info_table[] = {
         {}
     },
     {
+        INSTRUCTION_RET,
         0x00FF,
         0x00EE,
         "RET",
@@ -75,6 +45,7 @@ static const instruction_info_t instruction_info_table[] = {
         {}
     },
     {
+        INSTRUCTION_JP_NNN,
         0xF000,
         0x1000,
         "JP",
@@ -82,6 +53,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_NNN}
     },
     {
+        INSTRUCTION_CALL_NNN,
         0xF000,
         0x2000,
         "CALL",
@@ -89,6 +61,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_NNN}
     },
     {
+        INSTRUCTION_SE_VX_KK,
         0xF000,
         0x3000,
         "SE",
@@ -96,6 +69,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_KK}
     },
     {
+        INSTRUCTION_SNE_VX_KK,
         0xF000,
         0x4000,
         "SNE",
@@ -103,6 +77,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_KK}
     },
     {
+        INSTRUCTION_SE_VX_VY,
         0xF000,
         0x5000,
         "SE",
@@ -110,6 +85,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_VY}
     },
     {
+        INSTRUCTION_LD_VX_KK,
         0xF000,
         0x6000,
         "LD",
@@ -117,6 +93,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_KK}
     },
     {
+        INSTRUCTION_ADD_VX_KK,
         0xF000,
         0x7000,
         "ADD",
@@ -124,6 +101,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_KK}
     },
     {
+        INSTRUCTION_LD_VX_VY,
         0xF00F,
         0x8000,
         "LD",
@@ -131,6 +109,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_VY}
     },
     {
+        INSTRUCTION_OR_VX_VY,
         0xF00F,
         0x8001,
         "OR",
@@ -138,6 +117,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_VY}
     },
     {
+        INSTRUCTION_AND_VX_VY,
         0xF00F,
         0x8002,
         "AND",
@@ -145,6 +125,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_VY}
     },
     {
+        INSTRUCTION_XOR_VX_VY,
         0xF00F,
         0x8003,
         "XOR",
@@ -152,6 +133,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_VY}
     },
     {
+        INSTRUCTION_ADD_VX_VY,
         0xF00F,
         0x8004,
         "ADD",
@@ -159,6 +141,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_VY}
     },
     {
+        INSTRUCTION_SUB_VX_VY,
         0xF00F,
         0x8005,
         "SUB",
@@ -166,6 +149,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_VY}
     },
     {
+        INSTRUCTION_SHR_VX_VY,
         0xF00F,
         0x8006,
         "SHR",
@@ -173,6 +157,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_VY}
     },
     {
+        INSTRUCTION_SUBN_VX_VY,
         0xF00F,
         0x8007,
         "SUBN",
@@ -180,6 +165,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_VY}
     },
     {
+        INSTRUCTION_SHL_VX_VY,
         0xF00F,
         0x800E,
         "SHL",
@@ -187,6 +173,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_VY}
     },
     {
+        INSTRUCTION_SNE_VX_VY,
         0xF00F,
         0x9000,
         "SNE",
@@ -194,6 +181,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_VY}
     },
     {
+        INSTRUCTION_LD_I_NNN,
         0xF000,
         0xA000,
         "LD",
@@ -201,6 +189,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_I, OPERAND_NNN}
     },
     {
+        INSTRUCTION_JP_V0_NNN,
         0xF000,
         0xB000,
         "JP",
@@ -208,6 +197,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_V0, OPERAND_NNN}
     },
     {
+        INSTRUCTION_RND_VX_KK,
         0xF000,
         0xC000,
         "RND",
@@ -215,6 +205,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_KK}
     },
     {
+        INSTRUCTION_DRW_VX_VY_N,
         0xF000,
         0xD000,
         "DRW",
@@ -222,6 +213,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_VY, OPERAND_N}
     },
     {
+        INSTRUCTION_SKP_VX,
         0xF0FF,
         0xE09E,
         "SKP",
@@ -229,6 +221,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX}
     },
     {
+        INSTRUCTION_SKNP_VX,
         0xF0FF,
         0xE0A1,
         "SKNP",
@@ -236,6 +229,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX}
     },
     {
+        INSTRUCTION_LD_VX_DT,
         0xF0FF,
         0xF007,
         "LD",
@@ -243,13 +237,15 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_DT}
     },
     {
+        INSTRUCTION_LD_VX_K,
         0xF0FF,
         0xF00A,
         "LD",
         2,
-        {OPERAND_VX, OPERAND_KK}
+        {OPERAND_VX, OPERAND_K}
     },
     {
+        INSTRUCTION_LD_DT_VX,
         0xF0FF,
         0xF015,
         "LD",
@@ -257,6 +253,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_DT, OPERAND_VX}
     },
     {
+        INSTRUCTION_LD_ST_VX,
         0xF0FF,
         0xF018,
         "LD",
@@ -264,6 +261,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_ST, OPERAND_VX}
     },
     {
+        INSTRUCTION_ADD_I_VX,
         0xF0FF,
         0xF01E,
         "ADD",
@@ -271,20 +269,23 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_I, OPERAND_VX}
     },
     {
+        INSTRUCTION_LD_F_VX,
         0xF0FF,
         0xF029,
         "LD",
         2,
-        {OPERAND_I, OPERAND_VX}
+        {OPERAND_F, OPERAND_VX}
     },
     {
+        INSTRUCTION_LD_B_VX,
         0xF0FF,
         0xF033,
         "LD",
         2,
-        {OPERAND_I, OPERAND_VX}
+        {OPERAND_B, OPERAND_VX}
     },
     {
+        INSTRUCTION_LD_I_VX,
         0xF0FF,
         0xF055,
         "LD",
@@ -292,6 +293,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_I, OPERAND_VX}
     },
     {
+        INSTRUCTION_LD_VX_I,
         0xF0FF,
         0xF065,
         "LD",
@@ -299,6 +301,7 @@ static const instruction_info_t instruction_info_table[] = {
         {OPERAND_VX, OPERAND_I}
     },
     {
+        INSTRUCTION_DATA,
         0x0000,
         0x0000,
         ".data",
@@ -343,7 +346,7 @@ int disassembler_disassemble(instruction_t *instruction, uint16_t opcode) {
     for (size_t i = 0; i < instruction_info->operand_count; i++) {
         uint16_t mask = operand_masks[instruction_info->operand_types[i]][0];
         uint16_t shift = operand_masks[instruction_info->operand_types[i]][1];
-        instruction->operands[i] = opcode & mask >> shift;
+        instruction->operands[i] = (opcode & mask) >> shift;
     }
 
     return 0;
@@ -389,6 +392,12 @@ int disassembler_format(char *formatted_instruction, size_t size, const instruct
             case OPERAND_ST:
                 form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " ST");
                 break;
+            case OPERAND_F:
+                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " F");
+                break;
+            case OPERAND_B:
+                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " B");
+                break;
             case OPERAND_K:
                 form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " K");
                 break;
@@ -403,7 +412,7 @@ int disassembler_format(char *formatted_instruction, size_t size, const instruct
             form_op_size = snprintf(formatted_operand + form_op_size, MAX_FORMATTED_OP_SIZE - form_op_size, ",");
         }
 
-        form_inst_size = snprintf(formatted_instruction + form_inst_size, size - form_inst_size, "%s", formatted_operand);
+        form_inst_size += snprintf(formatted_instruction + form_inst_size, size - form_inst_size, "%s", formatted_operand);
     }
 
     return 0;
