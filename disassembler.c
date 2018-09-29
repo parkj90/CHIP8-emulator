@@ -13,12 +13,11 @@ static const uint16_t operand_masks[][2] = {
     [OPERAND_VX]    = {0x0F00, 8},        //x
     [OPERAND_VY]    = {0x00F0, 4},        //y
     [OPERAND_N]     = {0x000F, 0},        //n
-    [OPERAND_KK]     = {0x00FF, 0},        //kk
+    [OPERAND_KK]    = {0x00FF, 0},        //kk
     [OPERAND_NNN]   = {0x0FFF, 0},        //nnn
     [OPERAND_DATA]  = {0xFFFF, 0}
 };
 
-//fix me add in the other enums
 static const instruction_info_t instruction_info_table[] = {
     {
         INSTRUCTION_SYS_NNN,

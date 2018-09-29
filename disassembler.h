@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <stdbool.h>
 #include <stdint.h>
 
 typedef enum instruction_type {
