@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <stdbool.h>
 #include <string.h>
 #include "rombuffer.h"
@@ -14,8 +15,8 @@ typedef struct cpu {
 
     bool VF;
 
-    uint8_t delay;
-    uint8_t sound_timer;
+    uint8_t DT;
+    uint8_t ST;
 
     uint16_t pc;
 
@@ -85,7 +86,6 @@ static void (* const exec_instruction_table[])(cpu_t *cpu, const instruction_t *
     [INSTRUCTION_SUB_VX_VY]   = cpu_exec_sub_vx_vy,
     [INSTRUCTION_SHR_VX_VY]   = cpu_exec_shr_vx_vy,
     [INSTRUCTION_SUBN_VX_VY]  = cpu_exec_subn_vx_vy,
-    [INSTRUCTION_SHL_VX_VY]   = cpu_exec_shl_vx_vy,
     [INSTRUCTION_SNE_VX_VY]   = cpu_exec_sne_vx_vy,
     [INSTRUCTION_LD_I_NNN]    = cpu_exec_ld_i_nnn,
     [INSTRUCTION_JP_V0_NNN]   = cpu_exec_jp_v0_nnn,
@@ -101,11 +101,10 @@ static void (* const exec_instruction_table[])(cpu_t *cpu, const instruction_t *
     [INSTRUCTION_LD_F_VX]     = cpu_exec_ld_f_vx,
     [INSTRUCTION_LD_B_VX]     = cpu_exec_ld_b_vx,
     [INSTRUCTION_LD_I_VX]     = cpu_exec_ld_i_vx,
-    [INSTRUCTION_LD_VX_I]     = cpu_exec_ld_vx_i,
-    [INSTRUCTION_DATA]        = cpu_exec_data       
 };
 
 cpu_t *cpu_new() {
+    srand(time(NULL));
     cpu_t *cpu = malloc(sizeof(cpu_t));
     if (cpu == NULL) {
         return NULL;
@@ -331,17 +330,97 @@ static void cpu_exec_jp_v0_nnn(cpu_t *cpu, const instruction_t *instruction) {
 }
 
 //set Vx = random byte and kk
-static void cpu_exec_rnd_vx_kk(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_skp_vx(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_sknp_vx(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_vx_dt(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_vx_k(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_dt_vx(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_st_vx(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_add_i_vx(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_f_vx(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_b_vx(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_i_vx(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_vx_i(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_data(cpu_t *cpu, const instruction_t *instruction);
+static void cpu_exec_rnd_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
+    cpu->registers[instruction->operands[0]] = rand() % 256 + instruction->operands[1];
+}
+
+//display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
+static void cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
+    for (uint16_t i = 0; i < instruction->operands[2]; i++) {
+        uint8_t sprite = cpu->memory[cpu->I + i];
+        uint8_t coord_x = cpu->registers[instruction->operands[0]];
+        uint8_t coord_y = cpu->registers[instruction->operands[1]];
+
+        //fix me: VF collision detection (pixel erased), wrap to opposite side
+        printf("sprite: %x displayed at %x, %x\n", sprite, coord_x, coord_y);
+    }
+}
+
+//skip next instruction if key wth the value of Vx is pressed
+static void cpu_exec_skp_vx(cpu_t *cpu, const instruction_t *instruction) {
+    //fix me: check keyboard input
+    bool key; // = keyboard at: cpu->registers[instruction->operands[0]];
+    if (key) {
+        cpu->pc += 2;
+    }
+}
+
+//skip next instruction if key with the value of Vx is not pressed
+static void cpu_exec_sknp_vx(cpu_t *cpu, const instruction_t *instruction) {
+    //fix me: check keyboard input
+    bool key; // = keyboard at: cpu->registers[instruction->operands[0]];
+    if (!key) {
+        cpu->pc += 2;
+    }
+}
+
+//set Vx = delay timer value
+static void cpu_exec_ld_vx_dt(cpu_t *cpu, const instruction_t *instruction) {
+    cpu->registers[instruction->operands[0]] = cpu->DT;
+}
+
+//wait for a key press, store the value of the key in Vx
+static void cpu_exec_ld_vx_k(cpu_t *cpu, const instruction_t *instruction) {
+    //loop until key is pressed
+    uint8_t keystroke;
+
+    cpu->registers[instruction->operands[0]] = keystroke;
+}
+
+//set delay timer = Vx
+static void cpu_exec_ld_dt_vx(cpu_t *cpu, const instruction_t *instruction) {
+    cpu->DT = cpu->registers[instruction->operands[1]];
+}
+
+//set sound timer = Vx
+static void cpu_exec_ld_st_vx(cpu_t *cpu, const instruction_t *instruction) {
+    cpu->ST = cpu->registers[instruction->operands[1]];
+}
+
+//set I = I + Vx
+static void cpu_exec_add_i_vx(cpu_t *cpu, const instruction_t *instruction) {
+    cpu->I += cpu->registers[instruction->operands[1]];
+}
+
+//set I = location of sprite for digit Vx
+static void cpu_exec_ld_f_vx(cpu_t *cpu, const instruction_t *instruction) {
+    cpu->I = cpu->memory[cpu->registers[instruction->operands[1]]];
+}
+
+//store BCD representaion of Vx in memory locations I, I+1, and I+2
+static void cpu_exec_ld_b_vx(cpu_t *cpu, const instruction_t *instruction) {
+    uint8_t decimal = cpu->registers[instruction->operands[1]];
+
+    for (int i = 2; i >= 0; i--) {
+        cpu->memory[cpu->I + i] = decimal % 10;
+        decimal /= 10;
+    }
+}
+
+//store registers V0 through Vx in memory starting at location I
+static void cpu_exec_ld_i_vx(cpu_t *cpu, const instruction_t *instruction) {
+    for (uint16_t i = 0; i <= instruction->operands[1]; i++) {
+        cpu->memory[cpu->I + i] = cpu->registers[i];
+    }
+}
+
+//read registers V0 through Vx from memory starting at location I
+static void cpu_exec_ld_vx_i(cpu_t *cpu, const instruction_t *instruction) {
+    for (uint16_t i = 0; i <= instruction->operands[0]; i++) {
+         cpu->registers[i] = cpu->memory[cpu->I + i];
+    }
+}
+
+static void cpu_exec_data(cpu_t *cpu, const instruction_t *instruction) {
+    //do nothing?
+}
