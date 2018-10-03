@@ -145,7 +145,9 @@ int cpu_run(cpu_t *cpu) {
         return -1;
     }
     
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 20; i++) {
+        //debug code
+        printf("%5d|  ", i + 1);
         cpu_execute(cpu);
     }
 
@@ -167,8 +169,12 @@ static void cpu_execute(cpu_t *cpu) {
     //decode
     instruction_t instruction;
     disassembler_disassemble(&instruction, opcode);
+
     //fix me: remove debug print
-    printf("pc: %x, opcode: %x, instruction #: %02d, operands: %x, %x, %x\n", cpu->pc, opcode, instruction.instruction_info->instruction_type, instruction.operands[0], instruction.operands[1], instruction.operands[2]);
+    char formatted_instruction[20];
+    disassembler_format(formatted_instruction, 20, &instruction);
+    printf("pc: %x, %s\n", cpu->pc, formatted_instruction);
+
     //execute
     exec_instruction_table[instruction.instruction_info->instruction_type](cpu, &instruction);
 }
@@ -372,14 +378,16 @@ static void cpu_exec_rnd_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
 //display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
 static void cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
     printf("drawing sprites... \n");
+    /*
     for (uint16_t i = 0; i < instruction->operands[2]; i++) {
         uint8_t sprite = cpu->memory[cpu->I + i];
         uint8_t coord_x = cpu->registers[instruction->operands[0]];
         uint8_t coord_y = cpu->registers[instruction->operands[1]];
 
         //fix me: VF collision detection (pixel erased), wrap to opposite side
-        //printf("sprite: %x displayed at %x, %x\n", sprite, coord_x, coord_y);
+        printf("sprite: %x displayed at %x, %x\n", sprite, coord_x, coord_y);
     }
+    */
 
     cpu->pc += 2;
 }
