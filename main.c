@@ -1,6 +1,9 @@
+//main.c
+
 #include <stdio.h>
 #include "rombuffer.h"
 #include "disassembler.h"
+#include "cpu.h"
 
 int main(void) {
     FILE *cnct4 = fopen("../c8games/CONNECT4", "r");
@@ -13,12 +16,17 @@ int main(void) {
     if (cnct4_opcodes == NULL) {
         perror("Error: ");
         return -1;
-    }
+    } 
 
-    if (disassembler_dump(cnct4_opcodes)) {
+    cpu_t *cpu = cpu_new();
+    if (cpu == NULL) {
         return -1;
     }
+    cpu_load(cpu, cnct4_opcodes);
 
+    cpu_run(cpu);
+
+    cpu_free(cpu);
     rombuffer_free(cnct4_opcodes);
     
     return 0;
