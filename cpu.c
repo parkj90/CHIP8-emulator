@@ -145,7 +145,7 @@ int cpu_run(cpu_t *cpu) {
         return -1;
     }
     
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 100; i++) {
         //debug code
         printf("%5d|  ", i + 1);
         cpu_execute(cpu);
@@ -173,7 +173,7 @@ static void cpu_execute(cpu_t *cpu) {
     //fix me: remove debug print
     char formatted_instruction[20];
     disassembler_format(formatted_instruction, 20, &instruction);
-    printf("pc: %x, %s\n", cpu->pc, formatted_instruction);
+    printf("pc: %x, opcode: %x, instruction: %s\n", cpu->pc, opcode, formatted_instruction);
 
     //execute
     exec_instruction_table[instruction.instruction_info->instruction_type](cpu, &instruction);
