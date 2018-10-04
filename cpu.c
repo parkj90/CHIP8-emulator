@@ -10,6 +10,15 @@
 #include "cpu.h"
 
 typedef struct cpu {
+    //for hexadecimal keyboard input:
+    //  16th bit -> f           1 - key pressed
+    //   |          |           0 - key not pressed
+    //   1st bit -> 0
+    uint16_t (*hex_keyb)();
+
+    bool (*fetch_pixel)(uint8_t, uint8_t);    
+    void (*draw_pixel)(uint8_t, uint8_t, bool);
+
     uint8_t registers[16];
     uint16_t I;
 
@@ -25,6 +34,27 @@ typedef struct cpu {
 
     uint8_t memory[4096];
 } cpu_t;
+
+static const uint8_t font_library[] = {
+    0xF0, 0x90, 0x90, 0x90, 0xF0,       // 0
+    0x20, 0x60, 0x20, 0x20, 0x70,       // 1
+    0xF0, 0x10, 0xF0, 0x80, 0xF0,       // 2
+    0xF0, 0x10, 0xF0, 0x10, 0xF0,       // 3
+    0x90, 0x90, 0xF0, 0x10, 0x10,       // 4
+    0xF0, 0x80, 0xF0, 0x10, 0xF0,       // 5
+    0xF0, 0x80, 0xF0, 0x90, 0xF0,       // 6
+    0xF0, 0x10, 0x20, 0x40, 0x40,       // 7
+    0xF0, 0x90, 0xF0, 0x90, 0xF0,       // 8
+    0xF0, 0x90, 0xF0, 0x10, 0xF0,       // 9
+    0xF0, 0x90, 0xF0, 0x90, 0x90,       // a
+    0xE0, 0x90, 0xE0, 0x90, 0xE0,       // b
+    0xF0, 0x80, 0x80, 0x80, 0xF0,       // c
+    0xE0, 0x90, 0x90, 0x90, 0xE0,       // d
+    0xF0, 0x80, 0xF0, 0x80, 0xF0,       // e
+    0xF0, 0x80, 0xF0, 0x80, 0x80,       // f
+};
+
+static const size_t font_library_size = sizeof(font_library) / sizeof(uint8_t);
 
 static void cpu_execute(cpu_t *cpu);
 static uint16_t cpu_fetch_opcode(cpu_t *cpu);
@@ -131,6 +161,10 @@ int cpu_reset(cpu_t *cpu, const rombuffer_t *rom) {
 
     memset(cpu, 0, sizeof(cpu_t));
 
+    for (size_t i = 0; i < font_library_size; i++) {
+        cpu->memory[i] = font_library[i];
+    }
+
     cpu->pc = 0x200;
     for (size_t i = 0; i < rom->length; i++) {
         cpu->memory[0x200 + (i * 2)] = (uint8_t)((rom->data[i] & 0xFF00) >> 8); 
@@ -170,7 +204,7 @@ static void cpu_execute(cpu_t *cpu) {
     instruction_t instruction;
     disassembler_disassemble(&instruction, opcode);
 
-    //fix me: remove debug print
+    //fix me: debug print
     char formatted_instruction[20];
     disassembler_format(formatted_instruction, 20, &instruction);
     printf("pc: %x, opcode: %x, instruction: %s\n", cpu->pc, opcode, formatted_instruction);
@@ -377,6 +411,7 @@ static void cpu_exec_rnd_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
 
 //display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
 static void cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
+    //fix me
     printf("drawing sprites... \n");
     /*
     for (uint16_t i = 0; i < instruction->operands[2]; i++) {
@@ -394,9 +429,14 @@ static void cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
 
 //skip next instruction if key wth the value of Vx is pressed
 static void cpu_exec_skp_vx(cpu_t *cpu, const instruction_t *instruction) {
-    //fix me: check keyboard input
-    bool key = false;// = keyboard at: cpu->registers[instruction->operands[0]];
-    if (key) {
+    uint8_t key_value = cpu->registers[instruction->operands[0]];
+    if (key_value > 0xF) {
+        //return error code
+    }
+
+    uint16_t bitmask = 1 << key_value;
+
+    if (cpu->hex_keyb() & bitmask) {
         cpu->pc += 2;
     }
 
@@ -405,9 +445,14 @@ static void cpu_exec_skp_vx(cpu_t *cpu, const instruction_t *instruction) {
 
 //skip next instruction if key with the value of Vx is not pressed
 static void cpu_exec_sknp_vx(cpu_t *cpu, const instruction_t *instruction) {
-    //fix me: check keyboard input
-    bool key = false; // = keyboard at: cpu->registers[instruction->operands[0]];
-    if (!key) {
+    uint8_t key_value = cpu->registers[instruction->operands[0]];
+    if (key_value > 0x0F) {
+        //return error code
+    }
+
+    uint16_t bitmask = 1 << key_value;
+
+    if (!(cpu->hex_keyb() & bitmask)) {
         cpu->pc += 2;
     }
 
@@ -423,10 +468,20 @@ static void cpu_exec_ld_vx_dt(cpu_t *cpu, const instruction_t *instruction) {
 
 //wait for a key press, store the value of the key in Vx
 static void cpu_exec_ld_vx_k(cpu_t *cpu, const instruction_t *instruction) {
-    //loop until key is pressed
-    uint8_t keystroke = 0x00;
+    uint16_t keyboard = 0x0000;
+    while (!keyboard) {
+        keyboard = cpu->hex_keyb();
+    }
 
-    cpu->registers[instruction->operands[0]] = keystroke;
+    //fix me: consider changing behavior
+    //key with highest value is stored if multiple keys are pressed at once
+    keyboard >>= 1;
+    uint8_t key = 0x00;
+    while (keyboard) {
+        keyboard >>= 1;
+        key++;
+    }
+    cpu->registers[instruction->operands[0]] = key;
 
     cpu->pc += 2;
 }
@@ -454,7 +509,10 @@ static void cpu_exec_add_i_vx(cpu_t *cpu, const instruction_t *instruction) {
 
 //set I = location of sprite for digit Vx
 static void cpu_exec_ld_f_vx(cpu_t *cpu, const instruction_t *instruction) {
-    cpu->I = cpu->memory[cpu->registers[instruction->operands[1]]];
+    if (cpu->registers[instruction->operands[1]] > 0x0F) {
+        //return error code
+    }
+    cpu->I = cpu->registers[instruction->operands[1]] * 5;
 
     cpu->pc += 2;
 }
@@ -474,7 +532,11 @@ static void cpu_exec_ld_b_vx(cpu_t *cpu, const instruction_t *instruction) {
 //store registers V0 through Vx in memory starting at location I
 static void cpu_exec_ld_i_vx(cpu_t *cpu, const instruction_t *instruction) {
     for (uint16_t i = 0; i <= instruction->operands[1]; i++) {
-        cpu->memory[cpu->I + i] = cpu->registers[i];
+        if (cpu->I > 0x1FF) {
+            cpu->memory[cpu->I + i] = cpu->registers[i];
+        } else {
+            //return error code
+        }
     }
 
     cpu->pc += 2;
@@ -490,6 +552,5 @@ static void cpu_exec_ld_vx_i(cpu_t *cpu, const instruction_t *instruction) {
 }
 
 static void cpu_exec_data(cpu_t *cpu, const instruction_t *instruction) {
-    //fix me: use exit()?
-    //abort();
+    //fix me: have all instructions return int for error reporting
 }

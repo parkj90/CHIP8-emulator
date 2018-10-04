@@ -309,7 +309,7 @@ static const instruction_info_t instruction_info_table[] = {
     }
 };
 
-static const int instruction_info_table_size = sizeof(instruction_info_table) / sizeof(instruction_info_table[0]);
+static const size_t instruction_info_table_size = sizeof(instruction_info_table) / sizeof(instruction_info_table[0]);
 
 int disassembler_dump(const rombuffer_t *rom) {
     if (rom == NULL) {
