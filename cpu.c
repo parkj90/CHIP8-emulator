@@ -14,7 +14,8 @@ typedef struct cpu {
     //  16th bit -> f           1 - key pressed
     //   |          |           0 - key not pressed
     //   1st bit -> 0
-    uint16_t (*hex_keyb)();
+
+    uint16_t (*get_hex_keyb)(bool);
 
     bool (*fetch_pixel)(uint8_t, uint8_t);    
     void (*draw_pixel)(uint8_t, uint8_t, bool);
@@ -56,47 +57,53 @@ static const uint8_t font_library[] = {
 
 static const size_t font_library_size = sizeof(font_library) / sizeof(uint8_t);
 
-static void cpu_execute(cpu_t *cpu);
+static int cpu_execute(cpu_t *cpu);
 static uint16_t cpu_fetch_opcode(cpu_t *cpu);
 
-static void cpu_exec_sys_nnn(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_cls(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ret(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_jp_nnn(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_call_nnn(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_se_vx_kk(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_sne_vx_kk(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_se_vx_vy(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_vx_kk(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_add_vx_kk(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_vx_vy(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_or_vx_vy(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_and_vx_vy(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_xor_vx_vy(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_add_vx_vy(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_sub_vx_vy(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_shr_vx_vy(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_subn_vx_vy(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_shl_vx_vy(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_sne_vx_vy(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_i_nnn(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_jp_v0_nnn(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_rnd_vx_kk(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_skp_vx(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_sknp_vx(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_vx_dt(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_vx_k(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_dt_vx(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_st_vx(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_add_i_vx(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_f_vx(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_b_vx(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_i_vx(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_ld_vx_i(cpu_t *cpu, const instruction_t *instruction);
-static void cpu_exec_data(cpu_t *cpu, const instruction_t *instruction);
+//for cpu_exec functions:
+//       0 - success
+//      -2 - value exceeds 0x0F
+//      -3 - pc set to memory address < 0x1FF
+//      -4 - attempted write to memory address < 0x1FF 
+//      -5 - data opcode ran as executable
+static int cpu_exec_sys_nnn(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_cls(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_ret(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_jp_nnn(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_call_nnn(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_se_vx_kk(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_sne_vx_kk(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_se_vx_vy(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_ld_vx_kk(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_add_vx_kk(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_ld_vx_vy(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_or_vx_vy(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_and_vx_vy(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_xor_vx_vy(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_add_vx_vy(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_sub_vx_vy(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_shr_vx_vy(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_subn_vx_vy(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_shl_vx_vy(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_sne_vx_vy(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_ld_i_nnn(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_jp_v0_nnn(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_rnd_vx_kk(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_skp_vx(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_sknp_vx(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_ld_vx_dt(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_ld_vx_k(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_ld_dt_vx(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_ld_st_vx(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_add_i_vx(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_ld_f_vx(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_ld_b_vx(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_ld_i_vx(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_ld_vx_i(cpu_t *cpu, const instruction_t *instruction);
+static int cpu_exec_data(cpu_t *cpu, const instruction_t *instruction);
 
-static void (* const exec_instruction_table[])(cpu_t *cpu, const instruction_t *instruction) = {
+static int (* const exec_instruction_table[])(cpu_t *cpu, const instruction_t *instruction) = {
     [INSTRUCTION_SYS_NNN]     = cpu_exec_sys_nnn,
     [INSTRUCTION_CLS]         = cpu_exec_cls,
     [INSTRUCTION_RET]         = cpu_exec_ret,
@@ -144,26 +151,28 @@ cpu_t *cpu_new() {
     return cpu;
 }
 
-int cpu_load(cpu_t *cpu, const rombuffer_t *rom) {
+int cpu_load(cpu_t *cpu, const rombuffer_t *rom, uint16_t (*get_hex_keyb)(bool), bool (*fetch_pixel)(uint8_t, uint8_t), void (*draw_pixel)(uint8_t, uint8_t, bool)) {
     if (cpu == NULL || rom == NULL) {
         return -1;
     }
 
-    cpu_reset(cpu, rom);
+    cpu_reset(cpu, rom, get_hex_keyb, fetch_pixel, draw_pixel);
     
     return 0;
 }
 
-int cpu_reset(cpu_t *cpu, const rombuffer_t *rom) {
+int cpu_reset(cpu_t *cpu, const rombuffer_t *rom, uint16_t (*get_hex_keyb)(bool), bool (*fetch_pixel)(uint8_t, uint8_t), void (*draw_pixel)(uint8_t, uint8_t, bool)) {
     if (cpu == NULL) {
         return -1;
     }
 
     memset(cpu, 0, sizeof(cpu_t));
 
-    for (size_t i = 0; i < font_library_size; i++) {
-        cpu->memory[i] = font_library[i];
-    }
+    cpu->get_hex_keyb = get_hex_keyb;
+    cpu->fetch_pixel = fetch_pixel;
+    cpu->draw_pixel = draw_pixel;
+
+    memcpy(cpu->memory, font_library, font_library_size);
 
     cpu->pc = 0x200;
     for (size_t i = 0; i < rom->length; i++) {
@@ -182,7 +191,10 @@ int cpu_run(cpu_t *cpu) {
     for (int i = 0; i < 100; i++) {
         //debug code
         printf("%5d|  ", i + 1);
-        cpu_execute(cpu);
+        int error_code;
+        if ((error_code = cpu_execute(cpu))) {
+            return error_code;
+        }
     }
 
     return 0;
@@ -197,7 +209,7 @@ void cpu_free(cpu_t *cpu) {
     return;
 }
 
-static void cpu_execute(cpu_t *cpu) {
+static int cpu_execute(cpu_t *cpu) {
     //fetch
     const uint16_t opcode = cpu_fetch_opcode(cpu);
     //decode
@@ -210,7 +222,12 @@ static void cpu_execute(cpu_t *cpu) {
     printf("pc: %x, opcode: %x, instruction: %s\n", cpu->pc, opcode, formatted_instruction);
 
     //execute
-    exec_instruction_table[instruction.instruction_info->instruction_type](cpu, &instruction);
+    int error_code;
+    if ((error_code = exec_instruction_table[instruction.instruction_info->instruction_type](cpu, &instruction))) {
+        return error_code;
+    }
+
+    return 0;
 }
 
 static uint16_t cpu_fetch_opcode(cpu_t *cpu) {
@@ -219,105 +236,146 @@ static uint16_t cpu_fetch_opcode(cpu_t *cpu) {
     return opcode;
 }
 
-static void cpu_exec_sys_nnn(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_sys_nnn(cpu_t *cpu, const instruction_t *instruction) {
     //instruction ignored by modern interpreters
+    return 0;
 }
 
-static void cpu_exec_cls(cpu_t *cpu, const instruction_t *instruction) {
-    //temporary before screen implementation
+static int cpu_exec_cls(cpu_t *cpu, const instruction_t *instruction) {
+    //fix me
     printf("display cleared\n");
     cpu->pc += 2;
+
+    return 0;
 }
 
 //return from a subroutine
-static void cpu_exec_ret(cpu_t *cpu, const instruction_t *instruction) {
-    cpu->pc = cpu->stack[cpu->sp];
+static int cpu_exec_ret(cpu_t *cpu, const instruction_t *instruction) {
+    if (cpu->stack[cpu->sp] > 0x1FF) {
+        cpu->pc = cpu->stack[cpu->sp];
+    } else {
+        return -3;
+    }
+
     cpu->sp--;
+
+    return 0;
 }
 
 //jump to location nnn
-static void cpu_exec_jp_nnn(cpu_t *cpu, const instruction_t *instruction) {
-    cpu->pc = instruction->operands[0];
+static int cpu_exec_jp_nnn(cpu_t *cpu, const instruction_t *instruction) {
+    if (instruction->operands[0] > 0x1FF) {
+        cpu->pc = instruction->operands[0];
+    } else {
+        return -3;
+    }
+
+    return 0;
 }
 
 //call subroutine at nnn
-static void cpu_exec_call_nnn(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_call_nnn(cpu_t *cpu, const instruction_t *instruction) {
     cpu->sp++;
     cpu->stack[cpu->sp] = cpu->pc;
-    cpu->pc = instruction->operands[0];
+
+    if (instruction->operands[0] > 0x1FF) {
+        cpu->pc = instruction->operands[0];
+    } else {
+        return -3;
+    }
+
+    return 0;
 }
 
 //skip next instruction if Vx == kk
-static void cpu_exec_se_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_se_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
     if (cpu->registers[instruction->operands[0]] == instruction->operands[1]) {
         cpu->pc += 2;
     }
 
     cpu->pc += 2;
+    
+    return 0;
 }
 
 //skip next instruction if Vx != kk
-static void cpu_exec_sne_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_sne_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
     if (cpu->registers[instruction->operands[0]] != instruction->operands[1]) {
         cpu->pc += 2;
     }
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //skip next instruction if Vx == Vy
-static void cpu_exec_se_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_se_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     if (cpu->registers[instruction->operands[0]] == cpu->registers[instruction->operands[1]]) {
         cpu->pc += 2;
     }
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //set Vx = kk
-static void cpu_exec_ld_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_ld_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
     cpu->registers[instruction->operands[0]] = instruction->operands[1];
 
     cpu->pc += 2;
+    
+    return 0;
 }
 
 //sets Vx = Vx + kk
-static void cpu_exec_add_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_add_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
     cpu->registers[instruction->operands[0]] += instruction->operands[1];
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //set Vx = Vy
-static void cpu_exec_ld_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_ld_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     cpu->registers[instruction->operands[0]] = cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //set Vx = Vx OR Vy
-static void cpu_exec_or_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_or_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     cpu->registers[instruction->operands[0]] |= cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //set Vx = Vx AND Vy
-static void cpu_exec_and_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_and_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     cpu->registers[instruction->operands[0]] &= cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //set Vx = Vx XOR Vy
-static void cpu_exec_xor_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_xor_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     cpu->registers[instruction->operands[0]] ^= cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //set Vx = Vx + Vy, set VF = carry
-static void cpu_exec_add_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_add_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     if (cpu->registers[instruction->operands[0]] + cpu->registers[instruction->operands[1]] > 0xFF) {
         cpu->VF = true;
     } else {
@@ -327,10 +385,12 @@ static void cpu_exec_add_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     cpu->registers[instruction->operands[0]] += cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //set Vx = Vx - Vy, set VF = NOT borrow
-static void cpu_exec_sub_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_sub_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     if (cpu->registers[instruction->operands[0]] > cpu->registers[instruction->operands[1]]) {
         cpu->VF = true;
     } else {
@@ -340,10 +400,12 @@ static void cpu_exec_sub_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     cpu->registers[instruction->operands[0]] -= cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //set Vx = Vx + SHR 1
-static void cpu_exec_shr_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_shr_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     if ((cpu->registers[instruction->operands[0]] & 0x01) == 0x01) {
         cpu->VF = true;
     } else {
@@ -353,10 +415,12 @@ static void cpu_exec_shr_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     cpu->registers[instruction->operands[0]] >>= 1;
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //set Vx = Vy - Vx, set VF = NOT borrow
-static void cpu_exec_subn_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_subn_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     if (cpu->registers[instruction->operands[1]] > cpu->registers[instruction->operands[0]]) {
         cpu->VF = true;
     } else {
@@ -366,10 +430,12 @@ static void cpu_exec_subn_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     cpu->registers[instruction->operands[0]] = cpu->registers[instruction->operands[1]] - cpu->registers[instruction->operands[0]];
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //set Vx = Vx SHL 1
-static void cpu_exec_shl_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_shl_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     if ((cpu->registers[instruction->operands[0]] & 0x80) == 0x80) {
         cpu->VF = true;
     } else {
@@ -379,38 +445,52 @@ static void cpu_exec_shl_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     cpu->registers[instruction->operands[0]] <<= 1;
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //skip next instruction if Vx != Vy
-static void cpu_exec_sne_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_sne_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     if (cpu->registers[instruction->operands[0]] != cpu->registers[instruction->operands[1]]) {
         cpu->pc += 2;
     }
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //set I = nnn
-static void cpu_exec_ld_i_nnn(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_ld_i_nnn(cpu_t *cpu, const instruction_t *instruction) {
     cpu->I = instruction->operands[1];
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //jump to location nnn + V0
-static void cpu_exec_jp_v0_nnn(cpu_t *cpu, const instruction_t *instruction) {
-    cpu->pc = instruction->operands[1] + cpu->registers[0];
+static int cpu_exec_jp_v0_nnn(cpu_t *cpu, const instruction_t *instruction) {
+    if (instruction->operands[1] + cpu->registers[0] > 0x1FF) {
+        cpu->pc = instruction->operands[1] + cpu->registers[0];
+    } else {
+        return -3;
+    }
+
+    return 0;
 }
 
 //set Vx = random byte and kk
-static void cpu_exec_rnd_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_rnd_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
     cpu->registers[instruction->operands[0]] = rand() % 256 + instruction->operands[1];
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
-static void cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
     //fix me
     printf("drawing sprites... \n");
     /*
@@ -425,53 +505,58 @@ static void cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
     */
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //skip next instruction if key wth the value of Vx is pressed
-static void cpu_exec_skp_vx(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_skp_vx(cpu_t *cpu, const instruction_t *instruction) {
     uint8_t key_value = cpu->registers[instruction->operands[0]];
-    if (key_value > 0xF) {
-        //return error code
+    if (key_value > 0x0F) {
+        return -2;
     }
 
     uint16_t bitmask = 1 << key_value;
 
-    if (cpu->hex_keyb() & bitmask) {
+    if (cpu->get_hex_keyb(false) & bitmask) {
         cpu->pc += 2;
     }
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //skip next instruction if key with the value of Vx is not pressed
-static void cpu_exec_sknp_vx(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_sknp_vx(cpu_t *cpu, const instruction_t *instruction) {
     uint8_t key_value = cpu->registers[instruction->operands[0]];
     if (key_value > 0x0F) {
-        //return error code
+        return -2;
     }
 
     uint16_t bitmask = 1 << key_value;
 
-    if (!(cpu->hex_keyb() & bitmask)) {
+    if (!(cpu->get_hex_keyb(false) & bitmask)) {
         cpu->pc += 2;
     }
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //set Vx = delay timer value
-static void cpu_exec_ld_vx_dt(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_ld_vx_dt(cpu_t *cpu, const instruction_t *instruction) {
     cpu->registers[instruction->operands[0]] = cpu->DT;
 
     cpu->pc += 2;
+    
+    return 0;
 }
 
 //wait for a key press, store the value of the key in Vx
-static void cpu_exec_ld_vx_k(cpu_t *cpu, const instruction_t *instruction) {
-    uint16_t keyboard = 0x0000;
-    while (!keyboard) {
-        keyboard = cpu->hex_keyb();
-    }
+static int cpu_exec_ld_vx_k(cpu_t *cpu, const instruction_t *instruction) {
+    uint16_t keyboard = cpu->get_hex_keyb(true);
 
     //fix me: consider changing behavior
     //key with highest value is stored if multiple keys are pressed at once
@@ -484,73 +569,97 @@ static void cpu_exec_ld_vx_k(cpu_t *cpu, const instruction_t *instruction) {
     cpu->registers[instruction->operands[0]] = key;
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //set delay timer = Vx
-static void cpu_exec_ld_dt_vx(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_ld_dt_vx(cpu_t *cpu, const instruction_t *instruction) {
     cpu->DT = cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //set sound timer = Vx
-static void cpu_exec_ld_st_vx(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_ld_st_vx(cpu_t *cpu, const instruction_t *instruction) {
     cpu->ST = cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //set I = I + Vx
-static void cpu_exec_add_i_vx(cpu_t *cpu, const instruction_t *instruction) {
-    cpu->I += cpu->registers[instruction->operands[1]];
+static int cpu_exec_add_i_vx(cpu_t *cpu, const instruction_t *instruction) {
+    if (cpu->I > 0x1FF) {
+        cpu->I += cpu->registers[instruction->operands[1]];
+    } else {
+        return -4;
+    }
 
     cpu->pc += 2;
+    
+    return 0;
 }
 
 //set I = location of sprite for digit Vx
-static void cpu_exec_ld_f_vx(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_ld_f_vx(cpu_t *cpu, const instruction_t *instruction) {
     if (cpu->registers[instruction->operands[1]] > 0x0F) {
-        //return error code
+        return -2;
     }
     cpu->I = cpu->registers[instruction->operands[1]] * 5;
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //store BCD representaion of Vx in memory locations I, I+1, and I+2
-static void cpu_exec_ld_b_vx(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_ld_b_vx(cpu_t *cpu, const instruction_t *instruction) {
     uint8_t decimal = cpu->registers[instruction->operands[1]];
 
     for (int i = 2; i >= 0; i--) {
-        cpu->memory[cpu->I + i] = decimal % 10;
+        if (cpu->I > 0x1FF) {
+            cpu->memory[cpu->I + i] = decimal % 10;
+        } else {
+            return -4;
+        }
         decimal /= 10;
     }
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //store registers V0 through Vx in memory starting at location I
-static void cpu_exec_ld_i_vx(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_ld_i_vx(cpu_t *cpu, const instruction_t *instruction) {
     for (uint16_t i = 0; i <= instruction->operands[1]; i++) {
         if (cpu->I > 0x1FF) {
             cpu->memory[cpu->I + i] = cpu->registers[i];
         } else {
-            //return error code
+            return -4;
         }
     }
 
     cpu->pc += 2;
+
+    return 0;
 }
 
 //read registers V0 through Vx from memory starting at location I
-static void cpu_exec_ld_vx_i(cpu_t *cpu, const instruction_t *instruction) {
+static int cpu_exec_ld_vx_i(cpu_t *cpu, const instruction_t *instruction) {
     for (uint16_t i = 0; i <= instruction->operands[0]; i++) {
          cpu->registers[i] = cpu->memory[cpu->I + i];
     }
 
     cpu->pc += 2;
+    
+    return 0;
 }
 
-static void cpu_exec_data(cpu_t *cpu, const instruction_t *instruction) {
-    //fix me: have all instructions return int for error reporting
+static int cpu_exec_data(cpu_t *cpu, const instruction_t *instruction) {
+    return -5;
 }

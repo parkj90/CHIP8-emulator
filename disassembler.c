@@ -418,7 +418,7 @@ int disassembler_format(char *formatted_instruction, size_t size, const instruct
 }
 
 const instruction_info_t *disassembler_lookup(uint16_t opcode) {
-    for (int i = 0; i < instruction_info_table_size; i++) {
+    for (size_t i = 0; i < instruction_info_table_size; i++) {
         const instruction_info_t *instruction_info = &instruction_info_table[i];
 
         if ((opcode & instruction_info->mask) == instruction_info->id) {

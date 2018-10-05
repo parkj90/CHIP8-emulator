@@ -1,9 +1,15 @@
 //main.c
 
 #include <stdio.h>
+#include <stdbool.h>
 #include "rombuffer.h"
 #include "disassembler.h"
 #include "cpu.h"
+
+//fix me: temporary filler functions, running main will segfault
+static uint16_t (*get_hex_keyb)(bool blocking);
+static bool (*fetch_pixel)(uint8_t x, uint8_t y);
+static void (*draw_pixel)(uint8_t x, uint8_t y, bool fill);
 
 int main(void) {
     FILE *cnct4 = fopen("../c8games/CONNECT4", "r");
@@ -22,7 +28,9 @@ int main(void) {
     if (cpu == NULL) {
         return -1;
     }
-    cpu_load(cpu, cnct4_opcodes);
+
+    //fixme add keyboard and display functions
+    cpu_load(cpu, cnct4_opcodes, get_hex_keyb, fetch_pixel, draw_pixel);
 
     cpu_run(cpu);
 
