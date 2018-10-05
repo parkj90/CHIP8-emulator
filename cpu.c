@@ -9,6 +9,10 @@
 #include "disassembler.h"
 #include "cpu.h"
 
+#define DISPLAY_WIDTH 64        //x coordinate
+#define DISPLAY_HEIGHT 32       //y coordinate
+#define SPRITE_WIDTH 8          //8 bit sprite width
+
 typedef struct cpu {
     //for hexadecimal keyboard input:
     //  16th bit -> f           1 - key pressed
@@ -17,7 +21,7 @@ typedef struct cpu {
 
     uint16_t (*get_hex_keyb)(bool);
 
-    bool (*fetch_pixel)(uint8_t, uint8_t);    
+    bool (*get_pixel)(uint8_t, uint8_t);    
     void (*draw_pixel)(uint8_t, uint8_t, bool);
 
     uint8_t registers[16];
@@ -169,7 +173,7 @@ int cpu_reset(cpu_t *cpu, const rombuffer_t *rom, uint16_t (*get_hex_keyb)(bool)
     memset(cpu, 0, sizeof(cpu_t));
 
     cpu->get_hex_keyb = get_hex_keyb;
-    cpu->fetch_pixel = fetch_pixel;
+    cpu->get_pixel = fetch_pixel;
     cpu->draw_pixel = draw_pixel;
 
     memcpy(cpu->memory, font_library, font_library_size);
@@ -216,7 +220,7 @@ static int cpu_execute(cpu_t *cpu) {
     instruction_t instruction;
     disassembler_disassemble(&instruction, opcode);
 
-    //fix me: debug print
+    //debug print:
     char formatted_instruction[20];
     disassembler_format(formatted_instruction, 20, &instruction);
     printf("pc: %x, opcode: %x, instruction: %s\n", cpu->pc, opcode, formatted_instruction);
@@ -242,8 +246,15 @@ static int cpu_exec_sys_nnn(cpu_t *cpu, const instruction_t *instruction) {
 }
 
 static int cpu_exec_cls(cpu_t *cpu, const instruction_t *instruction) {
-    //fix me
+    //debug print:
     printf("display cleared\n");
+
+    for (int i = 0; i < DISPLAY_WIDTH; i++) {
+        for (int j = 0; j < DISPLAY_HEIGHT; j++) {
+            cpu->draw_pixel(i, j, false);
+        }
+    }
+
     cpu->pc += 2;
 
     return 0;
@@ -491,18 +502,39 @@ static int cpu_exec_rnd_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
 
 //display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
 static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
-    //fix me
+    //debug print
     printf("drawing sprites... \n");
-    /*
-    for (uint16_t i = 0; i < instruction->operands[2]; i++) {
-        uint8_t sprite = cpu->memory[cpu->I + i];
-        uint8_t coord_x = cpu->registers[instruction->operands[0]];
-        uint8_t coord_y = cpu->registers[instruction->operands[1]];
 
-        //fix me: VF collision detection (pixel erased), wrap to opposite side
-        printf("sprite: %x displayed at %x, %x\n", sprite, coord_x, coord_y);
+    //sprite coordinates
+    uint8_t x = cpu->registers[instruction->operands[0]];
+    uint8_t y = cpu->registers[instruction->operands[1]];
+
+    cpu->VF = false;
+
+    //for each byte of n-byte sprite
+    for (uint16_t i = 0; i < instruction->operands[2]; i++) {
+        uint8_t display_state = 0x00;
+        for (uint8_t j = 0; j < SPRITE_WIDTH; i++) {
+            display_state <<= 1;
+            if (cpu->get_pixel((x + j) % DISPLAY_WIDTH, (y + i) % DISPLAY_HEIGHT)) {
+                display_state |= 1;
+            }
+        }
+
+        if (display_state & cpu->memory[cpu->I + i]) {
+            cpu->VF = 1;
+        }
+
+        //XOR onto existing screen
+        display_state ^= cpu->memory[cpu->I + i];
+        for (uint8_t j = 0; j < SPRITE_WIDTH; i++) {
+            if (display_state & 0x80 >> j) {
+                cpu->draw_pixel((x + j) % DISPLAY_WIDTH, (y + i) % DISPLAY_HEIGHT, true);
+            } else {
+                cpu->draw_pixel((x + j) % DISPLAY_WIDTH, (y + i) % DISPLAY_HEIGHT, false);
+            }
+        }
     }
-    */
 
     cpu->pc += 2;
 
@@ -558,7 +590,7 @@ static int cpu_exec_ld_vx_dt(cpu_t *cpu, const instruction_t *instruction) {
 static int cpu_exec_ld_vx_k(cpu_t *cpu, const instruction_t *instruction) {
     uint16_t keyboard = cpu->get_hex_keyb(true);
 
-    //fix me: consider changing behavior
+    //    fix me: consider changing behavior
     //key with highest value is stored if multiple keys are pressed at once
     keyboard >>= 1;
     uint8_t key = 0x00;
