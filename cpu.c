@@ -12,6 +12,7 @@
 #define DISPLAY_WIDTH 64        //x coordinate
 #define DISPLAY_HEIGHT 32       //y coordinate
 #define SPRITE_WIDTH 8          //8 bit sprite width
+#define FONT_SPRITE_HEIGHT 5
 
 typedef struct cpu {
     //for hexadecimal keyboard input:
@@ -61,12 +62,24 @@ static const size_t font_library_size = sizeof(font_library) / sizeof(uint8_t);
 static int cpu_execute(cpu_t *cpu);
 static uint16_t cpu_fetch_opcode(cpu_t *cpu);
 
+enum cpu_error_code {
+    CPU_ERROR_NULL_PNTR        = -1,
+    CPU_ERROR_8BIT_OOB         = -2,
+    CPU_ERROR_PC_OOB           = -3,
+    CPU_ERROR_WRITE_OOB        = -4,
+    CPU_ERROR_STACK_UNDERFLOW  = -5,
+    CPU_ERROR_STACK_OVERFLOW   = -6,
+    CPU_ERROR_DATA_EXEC        = -7
+};
+
 //for cpu_exec functions:
 //       0 - success
 //      -2 - value exceeds 0x0F
-//      -3 - pc set to memory address < 0x1FF
-//      -4 - attempted write to memory address < 0x1FF 
-//      -5 - data opcode ran as executable
+//      -3 - pc set to memory address < 0x200
+//      -4 - attempted write to memory address < 0x200 
+//      -5 - stack underflow
+//      -6 - stack overflow
+//      -7 - data opcode ran as executable
 static int cpu_exec_sys_nnn(cpu_t *cpu, const instruction_t *instruction);
 static int cpu_exec_cls(cpu_t *cpu, const instruction_t *instruction);
 static int cpu_exec_ret(cpu_t *cpu, const instruction_t *instruction);
@@ -156,7 +169,7 @@ cpu_t *cpu_new(const cpu_io_interface_t *cpu_io_interface) {
 
 int cpu_load(cpu_t *cpu, const rombuffer_t *rom) {
     if (cpu == NULL || rom == NULL) {
-        return -1;
+        return CPU_ERROR_NULL_PNTR;
     }
 
     cpu_reset(cpu, rom);
@@ -166,7 +179,7 @@ int cpu_load(cpu_t *cpu, const rombuffer_t *rom) {
 
 int cpu_reset(cpu_t *cpu, const rombuffer_t *rom) {
     if (cpu == NULL) {
-        return -1;
+        return CPU_ERROR_NULL_PNTR;
     }
 
     memset(cpu->registers, 0, sizeof(cpu->registers));
@@ -192,7 +205,7 @@ int cpu_reset(cpu_t *cpu, const rombuffer_t *rom) {
 
 int cpu_run(cpu_t *cpu) {
     if (cpu == NULL) {
-        return -1;
+        return CPU_ERROR_NULL_PNTR;
     }
     
     for (int i = 0; i < 100; i++) {
@@ -265,12 +278,15 @@ static int cpu_exec_cls(cpu_t *cpu, const instruction_t *instruction) {
 
 //return from a subroutine
 static int cpu_exec_ret(cpu_t *cpu, const instruction_t *instruction) {
-    if (cpu->stack[cpu->sp] > 0x1FF) {
-        cpu->pc = cpu->stack[cpu->sp];
-    } else {
-        return -3;
+    if (cpu->stack[cpu->sp] < 0x200) {
+        return CPU_ERROR_PC_OOB;
     }
 
+    cpu->pc = cpu->stack[cpu->sp];
+
+    if (cpu->sp == 0) {
+        return CPU_ERROR_STACK_UNDERFLOW;
+    }
     cpu->sp--;
 
     return 0;
@@ -278,25 +294,29 @@ static int cpu_exec_ret(cpu_t *cpu, const instruction_t *instruction) {
 
 //jump to location nnn
 static int cpu_exec_jp_nnn(cpu_t *cpu, const instruction_t *instruction) {
-    if (instruction->operands[0] > 0x1FF) {
-        cpu->pc = instruction->operands[0];
-    } else {
-        return -3;
+    if (instruction->operands[0] < 0x200) {
+        return CPU_ERROR_PC_OOB;
     }
+
+    cpu->pc = instruction->operands[0];
 
     return 0;
 }
 
 //call subroutine at nnn
 static int cpu_exec_call_nnn(cpu_t *cpu, const instruction_t *instruction) {
+    if (cpu->sp == 15) {
+        return CPU_ERROR_STACK_OVERFLOW;
+    }
+
     cpu->sp++;
     cpu->stack[cpu->sp] = cpu->pc;
 
-    if (instruction->operands[0] > 0x1FF) {
-        cpu->pc = instruction->operands[0];
-    } else {
-        return -3;
+    if (instruction->operands[0] < 0x200) {
+        return CPU_ERROR_PC_OOB;
     }
+
+    cpu->pc = instruction->operands[0];
 
     return 0;
 }
@@ -420,11 +440,7 @@ static int cpu_exec_sub_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
 
 //set Vx = Vx + SHR 1
 static int cpu_exec_shr_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
-    if ((cpu->registers[instruction->operands[0]] & 0x01) == 0x01) {
-        cpu->VF = true;
-    } else {
-        cpu->VF = false;
-    }
+    cpu->VF = cpu->registers[instruction->operands[0]] & 0x01;
 
     cpu->registers[instruction->operands[0]] >>= 1;
 
@@ -450,11 +466,7 @@ static int cpu_exec_subn_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
 
 //set Vx = Vx SHL 1
 static int cpu_exec_shl_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
-    if ((cpu->registers[instruction->operands[0]] & 0x80) == 0x80) {
-        cpu->VF = true;
-    } else {
-        cpu->VF = false;
-    }
+    cpu->VF = cpu->registers[instruction->operands[0]] & 0x80;
 
     cpu->registers[instruction->operands[0]] <<= 1;
 
@@ -485,18 +497,18 @@ static int cpu_exec_ld_i_nnn(cpu_t *cpu, const instruction_t *instruction) {
 
 //jump to location nnn + V0
 static int cpu_exec_jp_v0_nnn(cpu_t *cpu, const instruction_t *instruction) {
-    if (instruction->operands[1] + cpu->registers[0] > 0x1FF) {
-        cpu->pc = instruction->operands[1] + cpu->registers[0];
-    } else {
-        return -3;
+    if (instruction->operands[1] + cpu->registers[0] < 0x200) {
+        return CPU_ERROR_PC_OOB;
     }
+
+    cpu->pc = instruction->operands[1] + cpu->registers[0];
 
     return 0;
 }
 
 //set Vx = random byte and kk
 static int cpu_exec_rnd_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
-    cpu->registers[instruction->operands[0]] = rand() % 256 + instruction->operands[1];
+    cpu->registers[instruction->operands[0]] = (rand() & 0xFF) & instruction->operands[1];
 
     cpu->pc += 2;
 
@@ -525,13 +537,13 @@ static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
         }
 
         if (display_state & cpu->memory[cpu->I + i]) {
-            cpu->VF = 1;
+            cpu->VF = true;
         }
 
         //XOR onto existing screen
         display_state ^= cpu->memory[cpu->I + i];
         for (uint8_t j = 0; j < SPRITE_WIDTH; j++) {
-            if (display_state & 0x80 >> j) {
+            if (display_state & (0x01 << (7 - j))) {
                 cpu->cpu_io_interface->draw_pixel((x + j) % DISPLAY_WIDTH, (y + i) % DISPLAY_HEIGHT, true);
             } else {
                 cpu->cpu_io_interface->draw_pixel((x + j) % DISPLAY_WIDTH, (y + i) % DISPLAY_HEIGHT, false);
@@ -548,12 +560,12 @@ static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
 static int cpu_exec_skp_vx(cpu_t *cpu, const instruction_t *instruction) {
     uint8_t key_value = cpu->registers[instruction->operands[0]];
     if (key_value > 0x0F) {
-        return -2;
+        return CPU_ERROR_8BIT_OOB;
     }
 
     uint16_t bitmask = 1 << key_value;
 
-    if (cpu->cpu_io_interface->get_keyboard(false) & bitmask) {
+    if (cpu->cpu_io_interface->get_keyboard() & bitmask) {
         cpu->pc += 2;
     }
 
@@ -566,12 +578,12 @@ static int cpu_exec_skp_vx(cpu_t *cpu, const instruction_t *instruction) {
 static int cpu_exec_sknp_vx(cpu_t *cpu, const instruction_t *instruction) {
     uint8_t key_value = cpu->registers[instruction->operands[0]];
     if (key_value > 0x0F) {
-        return -2;
+        return CPU_ERROR_8BIT_OOB;
     }
 
     uint16_t bitmask = 1 << key_value;
 
-    if (!(cpu->cpu_io_interface->get_keyboard(false) & bitmask)) {
+    if (!(cpu->cpu_io_interface->get_keyboard() & bitmask)) {
         cpu->pc += 2;
     }
 
@@ -591,16 +603,7 @@ static int cpu_exec_ld_vx_dt(cpu_t *cpu, const instruction_t *instruction) {
 
 //wait for a key press, store the value of the key in Vx
 static int cpu_exec_ld_vx_k(cpu_t *cpu, const instruction_t *instruction) {
-    uint16_t keyboard = cpu->cpu_io_interface->get_keyboard(true);
-
-    //    fix me: consider changing behavior
-    //key with highest value is stored if multiple keys are pressed at once
-    keyboard >>= 1;
-    uint8_t key = 0x00;
-    while (keyboard) {
-        keyboard >>= 1;
-        key++;
-    }
+    uint8_t key = cpu->cpu_io_interface->wait_keypress();
     cpu->registers[instruction->operands[0]] = key;
 
     cpu->pc += 2;
@@ -628,12 +631,11 @@ static int cpu_exec_ld_st_vx(cpu_t *cpu, const instruction_t *instruction) {
 
 //set I = I + Vx
 static int cpu_exec_add_i_vx(cpu_t *cpu, const instruction_t *instruction) {
-    if (cpu->I > 0x1FF) {
-        cpu->I += cpu->registers[instruction->operands[1]];
-    } else {
-        return -4;
+    if (cpu->I < 0x200) {
+        return CPU_ERROR_WRITE_OOB;
     }
 
+    cpu->I += cpu->registers[instruction->operands[1]];
     cpu->pc += 2;
     
     return 0;
@@ -642,9 +644,10 @@ static int cpu_exec_add_i_vx(cpu_t *cpu, const instruction_t *instruction) {
 //set I = location of sprite for digit Vx
 static int cpu_exec_ld_f_vx(cpu_t *cpu, const instruction_t *instruction) {
     if (cpu->registers[instruction->operands[1]] > 0x0F) {
-        return -2;
+        return CPU_ERROR_8BIT_OOB;
     }
-    cpu->I = cpu->registers[instruction->operands[1]] * 5;
+
+    cpu->I = cpu->registers[instruction->operands[1]] * FONT_SPRITE_HEIGHT;
 
     cpu->pc += 2;
 
@@ -653,16 +656,17 @@ static int cpu_exec_ld_f_vx(cpu_t *cpu, const instruction_t *instruction) {
 
 //store BCD representaion of Vx in memory locations I, I+1, and I+2
 static int cpu_exec_ld_b_vx(cpu_t *cpu, const instruction_t *instruction) {
+    if (cpu->I < 0x200) {
+        return CPU_ERROR_WRITE_OOB;
+    }
+
     uint8_t decimal = cpu->registers[instruction->operands[1]];
 
-    for (int i = 2; i >= 0; i--) {
-        if (cpu->I > 0x1FF) {
-            cpu->memory[cpu->I + i] = decimal % 10;
-        } else {
-            return -4;
-        }
-        decimal /= 10;
-    }
+    cpu->memory[cpu->I + 2] = decimal % 10;
+    decimal /= 10;
+    cpu->memory[cpu->I + 1] = decimal % 10;
+    decimal /= 10;
+    cpu->memory[cpu->I] = decimal % 10;
 
     cpu->pc += 2;
 
@@ -671,12 +675,12 @@ static int cpu_exec_ld_b_vx(cpu_t *cpu, const instruction_t *instruction) {
 
 //store registers V0 through Vx in memory starting at location I
 static int cpu_exec_ld_i_vx(cpu_t *cpu, const instruction_t *instruction) {
+    if (cpu->I < 0x200) {
+        return CPU_ERROR_WRITE_OOB;
+    }
+
     for (uint16_t i = 0; i <= instruction->operands[1]; i++) {
-        if (cpu->I > 0x1FF) {
-            cpu->memory[cpu->I + i] = cpu->registers[i];
-        } else {
-            return -4;
-        }
+        cpu->memory[cpu->I + i] = cpu->registers[i];
     }
 
     cpu->pc += 2;
@@ -696,5 +700,5 @@ static int cpu_exec_ld_vx_i(cpu_t *cpu, const instruction_t *instruction) {
 }
 
 static int cpu_exec_data(cpu_t *cpu, const instruction_t *instruction) {
-    return -5;
+    return CPU_ERROR_DATA_EXEC;
 }

@@ -7,12 +7,16 @@
 #include "cpu.h"
 
 //fix me: temporary filler functions, running main will segfault
-static uint16_t dummy_get_keyboard(bool blocking);
+static uint16_t dummy_get_keyboard();
+static uint8_t dummy_wait_keypress();
 static bool dummy_get_pixel(uint8_t x, uint8_t y);
 static void dummy_draw_pixel(uint8_t x, uint8_t y, bool fill);
 
 static const cpu_io_interface_t dummy_cpu_io_interface = {
-    dummy_get_keyboard, dummy_get_pixel, dummy_draw_pixel
+    .get_keyboard = dummy_get_keyboard,
+    .wait_keypress = dummy_wait_keypress,
+    .get_pixel = dummy_get_pixel,
+    .draw_pixel = dummy_draw_pixel
 };
 
 int main(void) {
@@ -45,8 +49,14 @@ int main(void) {
     return 0;
 }
 
-static uint16_t dummy_get_keyboard(bool blocking) {
+static uint16_t dummy_get_keyboard() {
     printf("getting keyboard input\n");
+
+    return 0;
+}
+
+static uint8_t dummy_wait_keypress() {
+    printf("waiting for keypress\n");
 
     return 0;
 }

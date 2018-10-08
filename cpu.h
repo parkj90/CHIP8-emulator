@@ -5,7 +5,8 @@
 typedef struct cpu cpu_t;
 
 typedef struct cpu_io_interface {
-    uint16_t (*get_keyboard)(bool blocking);
+    uint16_t (*get_keyboard)();
+    uint8_t (*wait_keypress)();
 
     bool (*get_pixel)(uint8_t x, uint8_t y);    
     void (*draw_pixel)(uint8_t x, uint8_t y, bool fill);
@@ -23,6 +24,8 @@ void cpu_free(cpu_t *cpu);
 //
 //    abort errors returned from cpu_exec functions:
 //      -2 - value exceeds 0x0F
-//      -3 - pc set to memory address < 0x1FF
-//      -4 - attempted write to memory address < 0x1FF 
-//      -5 - attempted execution of data
+//      -3 - pc set to memory address < 0x200
+//      -4 - attempted write to memory address < 0x200 
+//      -5 - stack underflow
+//      -6 - stack overflow
+//      -7 - attempted execution of data
