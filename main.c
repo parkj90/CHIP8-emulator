@@ -7,8 +7,8 @@
 #include "cpu.h"
 
 //fix me: temporary filler functions, running main will segfault
-static uint16_t (*get_hex_keyb)(bool blocking);
-static bool (*fetch_pixel)(uint8_t x, uint8_t y);
+static uint16_t (*get_keyboard)(bool blocking);
+static bool (*get_pixel)(uint8_t x, uint8_t y);
 static void (*draw_pixel)(uint8_t x, uint8_t y, bool fill);
 
 int main(void) {
@@ -24,13 +24,17 @@ int main(void) {
         return -1;
     } 
 
-    cpu_t *cpu = cpu_new();
+    cpu_io_interface_t cpu_io_interface = {
+        get_keyboard, get_pixel, draw_pixel
+    };
+
+    cpu_t *cpu = cpu_new(&cpu_io_interface);
     if (cpu == NULL) {
         return -1;
     }
 
     //fixme add keyboard and display functions
-    cpu_load(cpu, cnct4_opcodes, get_hex_keyb, fetch_pixel, draw_pixel);
+    cpu_load(cpu, cnct4_opcodes);
 
     cpu_run(cpu);
 

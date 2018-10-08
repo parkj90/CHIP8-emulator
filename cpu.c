@@ -37,13 +37,6 @@ typedef struct cpu {
     uint8_t memory[4096];
 } cpu_t;
 
-typedef struct cpu_io_interface {
-    uint16_t (*get_keyboard)(bool);
-
-    bool (*get_pixel)(uint8_t, uint8_t);    
-    void (*draw_pixel)(uint8_t, uint8_t, bool);
-} cpu_io_interface_t;
-
 static const uint8_t font_library[] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0,       // 0
     0x20, 0x60, 0x20, 0x20, 0x70,       // 1

@@ -3,7 +3,13 @@
 #include <stdint.h>
 
 typedef struct cpu cpu_t;
-typedef struct cpu_io_interface cpu_io_interface_t;
+
+typedef struct cpu_io_interface {
+    uint16_t (*get_keyboard)(bool);
+
+    bool (*get_pixel)(uint8_t, uint8_t);    
+    void (*draw_pixel)(uint8_t, uint8_t, bool);
+} cpu_io_interface_t;
 
 // function arg: uint16_t (*get_hex_keyb)(bool blocking);
 // function arg: bool (*fetch_pixel)(uint8_t x, uint8_t y);
