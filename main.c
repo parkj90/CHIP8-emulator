@@ -7,9 +7,13 @@
 #include "cpu.h"
 
 //fix me: temporary filler functions, running main will segfault
-static uint16_t (*get_keyboard)(bool blocking);
-static bool (*get_pixel)(uint8_t x, uint8_t y);
-static void (*draw_pixel)(uint8_t x, uint8_t y, bool fill);
+static uint16_t dummy_get_keyboard(bool blocking);
+static bool dummy_get_pixel(uint8_t x, uint8_t y);
+static void dummy_draw_pixel(uint8_t x, uint8_t y, bool fill);
+
+static const cpu_io_interface_t dummy_cpu_io_interface = {
+    dummy_get_keyboard, dummy_get_pixel, dummy_draw_pixel
+};
 
 int main(void) {
     FILE *cnct4 = fopen("../c8games/CONNECT4", "r");
@@ -24,11 +28,8 @@ int main(void) {
         return -1;
     } 
 
-    cpu_io_interface_t cpu_io_interface = {
-        get_keyboard, get_pixel, draw_pixel
-    };
 
-    cpu_t *cpu = cpu_new(&cpu_io_interface);
+    cpu_t *cpu = cpu_new(&dummy_cpu_io_interface);
     if (cpu == NULL) {
         return -1;
     }
@@ -42,4 +43,17 @@ int main(void) {
     rombuffer_free(cnct4_opcodes);
     
     return 0;
+}
+
+static uint16_t dummy_get_keyboard(bool blocking) {
+    return 0;
+}
+
+static bool dummy_get_pixel(uint8_t x, uint8_t y){
+    return false;
+}
+
+static void dummy_draw_pixel(uint8_t x, uint8_t y, bool fill){
+    printf("drawing to %d, %d, ", x, y);
+    printf(fill ? "fill: true\n" : "fill: false\n");
 }

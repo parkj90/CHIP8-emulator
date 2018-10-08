@@ -517,7 +517,7 @@ static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
     //for each byte of n-byte sprite
     for (uint16_t i = 0; i < instruction->operands[2]; i++) {
         uint8_t display_state = 0x00;
-        for (uint8_t j = 0; j < SPRITE_WIDTH; i++) {
+        for (uint8_t j = 0; j < SPRITE_WIDTH; j++) {
             display_state <<= 1;
             if (cpu->cpu_io_interface->get_pixel((x + j) % DISPLAY_WIDTH, (y + i) % DISPLAY_HEIGHT)) {
                 display_state |= 1;
@@ -530,7 +530,7 @@ static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
 
         //XOR onto existing screen
         display_state ^= cpu->memory[cpu->I + i];
-        for (uint8_t j = 0; j < SPRITE_WIDTH; i++) {
+        for (uint8_t j = 0; j < SPRITE_WIDTH; j++) {
             if (display_state & 0x80 >> j) {
                 cpu->cpu_io_interface->draw_pixel((x + j) % DISPLAY_WIDTH, (y + i) % DISPLAY_HEIGHT, true);
             } else {
