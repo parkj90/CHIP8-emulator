@@ -63,6 +63,7 @@ static const size_t font_library_size = sizeof(font_library) / sizeof(uint8_t);
 
 static int cpu_execute(cpu_t *cpu);
 static uint16_t cpu_fetch_opcode(cpu_t *cpu);
+static void cpu_reset_data(cpu_t *cpu);
 
 //for cpu_exec functions:
 //       0 - success
@@ -146,35 +147,35 @@ static int (* const exec_instruction_table[])(cpu_t *cpu, const instruction_t *i
     [INSTRUCTION_DATA]        = cpu_exec_data
 };
 
-cpu_t *cpu_new() {
+cpu_t *cpu_new(uint16_t (*get_hex_keyb)(bool), bool (*fetch_pixel)(uint8_t, uint8_t), void (*draw_pixel)(uint8_t, uint8_t, bool)) {
     cpu_t *cpu = malloc(sizeof(cpu_t));
     if (cpu == NULL) {
         return NULL;
     }
 
+    cpu->get_hex_keyb = get_hex_keyb;
+    cpu->get_pixel = fetch_pixel;
+    cpu->draw_pixel = draw_pixel;
+
     return cpu;
 }
 
-int cpu_load(cpu_t *cpu, const rombuffer_t *rom, uint16_t (*get_hex_keyb)(bool), bool (*fetch_pixel)(uint8_t, uint8_t), void (*draw_pixel)(uint8_t, uint8_t, bool)) {
+int cpu_load(cpu_t *cpu, const rombuffer_t *rom) {
     if (cpu == NULL || rom == NULL) {
         return -1;
     }
 
-    cpu_reset(cpu, rom, get_hex_keyb, fetch_pixel, draw_pixel);
+    cpu_reset(cpu, rom);
     
     return 0;
 }
 
-int cpu_reset(cpu_t *cpu, const rombuffer_t *rom, uint16_t (*get_hex_keyb)(bool), bool (*fetch_pixel)(uint8_t, uint8_t), void (*draw_pixel)(uint8_t, uint8_t, bool)) {
+int cpu_reset(cpu_t *cpu, const rombuffer_t *rom) {
     if (cpu == NULL) {
         return -1;
     }
 
-    memset(cpu, 0, sizeof(cpu_t));
-
-    cpu->get_hex_keyb = get_hex_keyb;
-    cpu->get_pixel = fetch_pixel;
-    cpu->draw_pixel = draw_pixel;
+    cpu_reset_data(cpu);
 
     memcpy(cpu->memory, font_library, font_library_size);
 
@@ -238,6 +239,23 @@ static uint16_t cpu_fetch_opcode(cpu_t *cpu) {
     uint16_t opcode = (cpu->memory[cpu->pc] << 8) | (cpu->memory[cpu->pc + 1]);
 
     return opcode;
+}
+
+static void cpu_reset_data(cpu_t *cpu) {
+    memset(cpu->registers, 0, sizeof(cpu->registers));
+    cpu->I = 0;
+
+    cpu->VF = false;
+
+    cpu->DT = 0;
+    cpu->ST = 0;
+
+    cpu->pc = 0;
+
+    cpu->sp = 0;
+    memset(cpu->stack, 0, sizeof(cpu->stack));
+
+    memset(cpu->memory, 0, sizeof(cpu->memory));
 }
 
 static int cpu_exec_sys_nnn(cpu_t *cpu, const instruction_t *instruction) {
