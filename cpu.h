@@ -5,13 +5,10 @@
 typedef struct cpu cpu_t;
 
 typedef struct cpu_io_interface {
-    // function arg: uint16_t (*get_keyboard)(bool blocking);
-    uint16_t (*get_keyboard)(bool);
+    uint16_t (*get_keyboard)(bool blocking);
 
-    // function arg: bool (*get_pixel)(uint8_t x, uint8_t y);
-    bool (*get_pixel)(uint8_t, uint8_t);    
-    // function arg: void (*draw_pixel)(uint8_t x, uint8_t y, bool fill);
-    void (*draw_pixel)(uint8_t, uint8_t, bool);
+    bool (*get_pixel)(uint8_t x, uint8_t y);    
+    void (*draw_pixel)(uint8_t x, uint8_t y, bool fill);
 } cpu_io_interface_t;
 
 cpu_t *cpu_new(const cpu_io_interface_t *cpu_io_interface);

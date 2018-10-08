@@ -46,14 +46,17 @@ int main(void) {
 }
 
 static uint16_t dummy_get_keyboard(bool blocking) {
+    printf("getting keyboard input\n");
+
     return 0;
 }
 
 static bool dummy_get_pixel(uint8_t x, uint8_t y){
+    printf("getting pixel state at: %d, %d\n", x, y);
+
     return false;
 }
 
 static void dummy_draw_pixel(uint8_t x, uint8_t y, bool fill){
-    printf("drawing to %d, %d, ", x, y);
-    printf(fill ? "fill: true\n" : "fill: false\n");
+    printf("drawing to %d, %d, fill: %d\n", x, y, fill);
 }
