@@ -3,11 +3,12 @@
 #include <stdint.h>
 
 typedef struct cpu cpu_t;
+typedef struct cpu_io_interface cpu_io_interface_t;
 
 // function arg: uint16_t (*get_hex_keyb)(bool blocking);
 // function arg: bool (*fetch_pixel)(uint8_t x, uint8_t y);
 // function arg: void (*draw_pixel)(uint8_t x, uint8_t y, bool fill);
-cpu_t *cpu_new(uint16_t (*get_hex_keyb)(bool), bool (*get_pixel)(uint8_t, uint8_t), void (*draw_pixel)(uint8_t, uint8_t, bool));
+cpu_t *cpu_new(const cpu_io_interface_t *cpu_io_interface);
 int cpu_load(cpu_t *cpu, const rombuffer_t *rom);
 int cpu_run(cpu_t *cpu);
 int cpu_reset(cpu_t *cpu, const rombuffer_t *rom);

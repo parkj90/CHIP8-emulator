@@ -19,10 +19,7 @@ typedef struct cpu {
     //   |          |           0 - key not pressed
     //   1st bit -> 0
 
-    uint16_t (*get_keyboard)(bool);
-
-    bool (*get_pixel)(uint8_t, uint8_t);    
-    void (*draw_pixel)(uint8_t, uint8_t, bool);
+    const cpu_io_interface_t *cpu_io_interface;
 
     uint8_t registers[16];
     uint16_t I;
@@ -39,6 +36,13 @@ typedef struct cpu {
 
     uint8_t memory[4096];
 } cpu_t;
+
+typedef struct cpu_io_interface {
+    uint16_t (*get_keyboard)(bool);
+
+    bool (*get_pixel)(uint8_t, uint8_t);    
+    void (*draw_pixel)(uint8_t, uint8_t, bool);
+} cpu_io_interface_t;
 
 static const uint8_t font_library[] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0,       // 0
@@ -146,15 +150,13 @@ static int (* const exec_instruction_table[])(cpu_t *cpu, const instruction_t *i
     [INSTRUCTION_DATA]        = cpu_exec_data
 };
 
-cpu_t *cpu_new(uint16_t (*get_keyboard)(bool), bool (*get_pixel)(uint8_t, uint8_t), void (*draw_pixel)(uint8_t, uint8_t, bool)) {
+cpu_t *cpu_new(const cpu_io_interface_t *cpu_io_interface) {
     cpu_t *cpu = malloc(sizeof(cpu_t));
     if (cpu == NULL) {
         return NULL;
     }
 
-    cpu->get_keyboard = get_keyboard;
-    cpu->get_pixel = get_pixel;
-    cpu->draw_pixel = draw_pixel;
+    cpu->cpu_io_interface = cpu_io_interface;
 
     return cpu;
 }
@@ -259,7 +261,7 @@ static int cpu_exec_cls(cpu_t *cpu, const instruction_t *instruction) {
 
     for (int i = 0; i < DISPLAY_WIDTH; i++) {
         for (int j = 0; j < DISPLAY_HEIGHT; j++) {
-            cpu->draw_pixel(i, j, false);
+            cpu->cpu_io_interface->draw_pixel(i, j, false);
         }
     }
 
@@ -524,7 +526,7 @@ static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
         uint8_t display_state = 0x00;
         for (uint8_t j = 0; j < SPRITE_WIDTH; i++) {
             display_state <<= 1;
-            if (cpu->get_pixel((x + j) % DISPLAY_WIDTH, (y + i) % DISPLAY_HEIGHT)) {
+            if (cpu->cpu_io_interface->get_pixel((x + j) % DISPLAY_WIDTH, (y + i) % DISPLAY_HEIGHT)) {
                 display_state |= 1;
             }
         }
@@ -537,9 +539,9 @@ static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
         display_state ^= cpu->memory[cpu->I + i];
         for (uint8_t j = 0; j < SPRITE_WIDTH; i++) {
             if (display_state & 0x80 >> j) {
-                cpu->draw_pixel((x + j) % DISPLAY_WIDTH, (y + i) % DISPLAY_HEIGHT, true);
+                cpu->cpu_io_interface->draw_pixel((x + j) % DISPLAY_WIDTH, (y + i) % DISPLAY_HEIGHT, true);
             } else {
-                cpu->draw_pixel((x + j) % DISPLAY_WIDTH, (y + i) % DISPLAY_HEIGHT, false);
+                cpu->cpu_io_interface->draw_pixel((x + j) % DISPLAY_WIDTH, (y + i) % DISPLAY_HEIGHT, false);
             }
         }
     }
@@ -558,7 +560,7 @@ static int cpu_exec_skp_vx(cpu_t *cpu, const instruction_t *instruction) {
 
     uint16_t bitmask = 1 << key_value;
 
-    if (cpu->get_keyboard(false) & bitmask) {
+    if (cpu->cpu_io_interface->get_keyboard(false) & bitmask) {
         cpu->pc += 2;
     }
 
@@ -576,7 +578,7 @@ static int cpu_exec_sknp_vx(cpu_t *cpu, const instruction_t *instruction) {
 
     uint16_t bitmask = 1 << key_value;
 
-    if (!(cpu->get_keyboard(false) & bitmask)) {
+    if (!(cpu->cpu_io_interface->get_keyboard(false) & bitmask)) {
         cpu->pc += 2;
     }
 
@@ -596,7 +598,7 @@ static int cpu_exec_ld_vx_dt(cpu_t *cpu, const instruction_t *instruction) {
 
 //wait for a key press, store the value of the key in Vx
 static int cpu_exec_ld_vx_k(cpu_t *cpu, const instruction_t *instruction) {
-    uint16_t keyboard = cpu->get_keyboard(true);
+    uint16_t keyboard = cpu->cpu_io_interface->get_keyboard(true);
 
     //    fix me: consider changing behavior
     //key with highest value is stored if multiple keys are pressed at once
