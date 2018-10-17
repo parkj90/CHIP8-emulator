@@ -9,8 +9,6 @@
 #include "disassembler.h"
 #include "cpu.h"
 
-#define DISPLAY_WIDTH 64        //x coordinate
-#define DISPLAY_HEIGHT 32       //y coordinate
 #define SPRITE_WIDTH 8          //8 bit sprite width
 #define FONT_SPRITE_HEIGHT 5
 

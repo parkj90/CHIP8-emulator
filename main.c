@@ -5,6 +5,7 @@
 #include "rombuffer.h"
 #include "disassembler.h"
 #include "cpu.h"
+#include "ncurses_io.h"
 
 //fix me: temporary filler functions, running main will segfault
 static uint16_t dummy_get_keyboard();

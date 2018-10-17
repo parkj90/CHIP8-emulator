@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <stdint.h>
-
 typedef enum instruction_type {
     INSTRUCTION_SYS_NNN,
     INSTRUCTION_CLS,

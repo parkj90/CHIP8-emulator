@@ -1,7 +1,6 @@
 //disassembler.c
 
 #include <stdio.h>
-#include <stdint.h>
 #include <string.h>
 #include "rombuffer.h"
 #include "disassembler.h"

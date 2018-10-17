@@ -1,6 +1,9 @@
 //cpu.h
 
-#include <stdint.h>
+#pragma once
+
+#define DISPLAY_WIDTH 64        //x coordinate
+#define DISPLAY_HEIGHT 32       //y coordinate
 
 typedef struct cpu cpu_t;
 
