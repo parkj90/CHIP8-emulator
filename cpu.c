@@ -556,14 +556,7 @@ static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
 
 //skip next instruction if key wth the value of Vx is pressed
 static int cpu_exec_skp_vx(cpu_t *cpu, const instruction_t *instruction) {
-    uint8_t key_value = cpu->registers[instruction->operands[0]];
-    if (key_value > 0x0F) {
-        return CPU_ERROR_8BIT_OOB;
-    }
-
-    uint16_t bitmask = 1 << key_value;
-
-    if (cpu->cpu_io_interface->get_keyboard() & bitmask) {
+    if (cpu->cpu_io_interface->get_keyboard() == cpu->registers[instruction->operands[0]]) {
         cpu->pc += 2;
     }
 
@@ -574,14 +567,7 @@ static int cpu_exec_skp_vx(cpu_t *cpu, const instruction_t *instruction) {
 
 //skip next instruction if key with the value of Vx is not pressed
 static int cpu_exec_sknp_vx(cpu_t *cpu, const instruction_t *instruction) {
-    uint8_t key_value = cpu->registers[instruction->operands[0]];
-    if (key_value > 0x0F) {
-        return CPU_ERROR_8BIT_OOB;
-    }
-
-    uint16_t bitmask = 1 << key_value;
-
-    if (!(cpu->cpu_io_interface->get_keyboard() & bitmask)) {
+    if (cpu->cpu_io_interface->get_keyboard() != cpu->registers[instruction->operands[0]]) {
         cpu->pc += 2;
     }
 

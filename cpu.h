@@ -8,7 +8,7 @@
 typedef struct cpu cpu_t;
 
 typedef struct cpu_io_interface {
-    uint16_t (*get_keyboard)();
+    int (*get_keyboard)();
     uint8_t (*wait_keypress)();
 
     bool (*get_pixel)(uint8_t x, uint8_t y);    
