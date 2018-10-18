@@ -7,19 +7,6 @@
 #include "cpu.h"
 #include "ncurses_io.h"
 
-//fix me: temporary filler functions, running main will segfault
-static uint16_t dummy_get_keyboard();
-static uint8_t dummy_wait_keypress();
-static bool dummy_get_pixel(uint8_t x, uint8_t y);
-static void dummy_draw_pixel(uint8_t x, uint8_t y, bool fill);
-
-static const cpu_io_interface_t dummy_cpu_io_interface = {
-    .get_keyboard = dummy_get_keyboard,
-    .wait_keypress = dummy_wait_keypress,
-    .get_pixel = dummy_get_pixel,
-    .draw_pixel = dummy_draw_pixel
-};
-
 int main(void) {
     FILE *cnct4 = fopen("../c8games/CONNECT4", "r");
     if (cnct4 == NULL) {
@@ -33,41 +20,19 @@ int main(void) {
         return -1;
     } 
 
-
-    cpu_t *cpu = cpu_new(&dummy_cpu_io_interface);
+    cpu_t *cpu = cpu_new(&ncurses_io_interface);
     if (cpu == NULL) {
         return -1;
     }
 
-    //fixme add keyboard and display functions
+    ncurses_io_init();
     cpu_load(cpu, cnct4_opcodes);
 
     cpu_run(cpu);
 
+    ncurses_io_terminate();
     cpu_free(cpu);
     rombuffer_free(cnct4_opcodes);
     
     return 0;
-}
-
-static uint16_t dummy_get_keyboard() {
-    printf("getting keyboard input\n");
-
-    return 0;
-}
-
-static uint8_t dummy_wait_keypress() {
-    printf("waiting for keypress\n");
-
-    return 0;
-}
-
-static bool dummy_get_pixel(uint8_t x, uint8_t y){
-    printf("getting pixel state at: %d, %d\n", x, y);
-
-    return false;
-}
-
-static void dummy_draw_pixel(uint8_t x, uint8_t y, bool fill){
-    printf("drawing to %d, %d, fill: %d\n", x, y, fill);
 }

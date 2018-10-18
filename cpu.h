@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "rombuffer.h" 
+
 #define DISPLAY_WIDTH 64        //x coordinate
 #define DISPLAY_HEIGHT 32       //y coordinate
 

@@ -179,4 +179,5 @@ static void ncurses_io_draw_pixel(uint8_t x, uint8_t y, bool fill) {
     } else {
         waddch(win, CLEAR_CHAR);
     }
+    wrefresh(win);
 }

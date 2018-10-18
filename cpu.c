@@ -208,7 +208,7 @@ int cpu_run(cpu_t *cpu) {
     
     for (int i = 0; i < 100; i++) {
         //debug code
-        printf("%5d|  ", i + 1);
+        //printf("%5d|  ", i + 1);
         int error_code;
         if ((error_code = cpu_execute(cpu))) {
             return error_code;
@@ -235,9 +235,11 @@ static int cpu_execute(cpu_t *cpu) {
     disassembler_disassemble(&instruction, opcode);
 
     //debug print:
+    /*
     char formatted_instruction[20];
     disassembler_format(formatted_instruction, 20, &instruction);
     printf("pc: %x, opcode: %x, instruction: %s\n", cpu->pc, opcode, formatted_instruction);
+    */
 
     //execute
     int error_code;
@@ -261,7 +263,7 @@ static int cpu_exec_sys_nnn(cpu_t *cpu, const instruction_t *instruction) {
 
 static int cpu_exec_cls(cpu_t *cpu, const instruction_t *instruction) {
     //debug print:
-    printf("display cleared\n");
+    //printf("display cleared\n");
 
     for (int i = 0; i < DISPLAY_WIDTH; i++) {
         for (int j = 0; j < DISPLAY_HEIGHT; j++) {
@@ -516,7 +518,7 @@ static int cpu_exec_rnd_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
 //display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
 static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
     //debug print
-    printf("drawing sprites... \n");
+    //printf("drawing sprites... \n");
 
     //sprite coordinates
     uint8_t x = cpu->registers[instruction->operands[0]];
