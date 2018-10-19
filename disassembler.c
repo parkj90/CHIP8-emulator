@@ -28,7 +28,7 @@ static const instruction_info_t instruction_info_table[] = {
     },
     {
         INSTRUCTION_CLS,
-        0x00F0,
+        0xFFFF,
         0x00E0,
         "CLS",
         0,

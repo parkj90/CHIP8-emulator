@@ -211,9 +211,7 @@ int cpu_run(cpu_t *cpu) {
         return CPU_ERROR_NULL_PNTR;
     }
     
-    for (int i = 0; i < 100; i++) {
-        //debug code
-        fprintf(debug_output, "%5d|  ", i + 1);
+    for (int i = 0; i < 900; i++) {
         int error_code;
         if ((error_code = cpu_execute(cpu))) {
             return error_code;
@@ -239,13 +237,6 @@ static int cpu_execute(cpu_t *cpu) {
     instruction_t instruction;
     disassembler_disassemble(&instruction, opcode);
 
-    //debug print:
-    
-    char formatted_instruction[20];
-    disassembler_format(formatted_instruction, 20, &instruction);
-    fprintf(debug_output, "pc: %x, opcode: %x, instruction: %s\n", cpu->pc, opcode, formatted_instruction);
-    
-
     //execute
     int error_code;
     if ((error_code = exec_instruction_table[instruction.instruction_info->instruction_type](cpu, &instruction))) {
@@ -267,9 +258,6 @@ static int cpu_exec_sys_nnn(cpu_t *cpu, const instruction_t *instruction) {
 }
 
 static int cpu_exec_cls(cpu_t *cpu, const instruction_t *instruction) {
-    //debug print and sleep:
-    fprintf(debug_output, "display cleared\n");
-
     for (int i = 0; i < DISPLAY_WIDTH; i++) {
         for (int j = 0; j < DISPLAY_HEIGHT; j++) {
             cpu->cpu_io_interface->draw_pixel(i, j, false);
@@ -522,9 +510,6 @@ static int cpu_exec_rnd_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
 
 //display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
 static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
-    //debug print
-    fprintf(debug_output, "drawing sprites... \n");
-
     //sprite coordinates
     uint8_t x = cpu->registers[instruction->operands[0]];
     uint8_t y = cpu->registers[instruction->operands[1]];
@@ -558,8 +543,9 @@ static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
 
     cpu->pc += 2;
 
-    //debug sleep
+    //debug sleep remove after ncurses is fixed
     sleep(1);
+
     return 0;
 }
 
