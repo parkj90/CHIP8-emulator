@@ -9,6 +9,8 @@
 #include "disassembler.h"
 #include "cpu.h"
 
+#include <unistd.h>
+
 #define SPRITE_WIDTH 8          //8 bit sprite width
 #define FONT_SPRITE_HEIGHT 5
 
@@ -154,7 +156,10 @@ static int (* const exec_instruction_table[])(cpu_t *cpu, const instruction_t *i
     [INSTRUCTION_DATA]        = cpu_exec_data
 };
 
+FILE *debug_output;
+
 cpu_t *cpu_new(const cpu_io_interface_t *cpu_io_interface) {
+   debug_output = fopen("debug_output.txt", "w");
     cpu_t *cpu = malloc(sizeof(cpu_t));
     if (cpu == NULL) {
         return NULL;
@@ -208,7 +213,7 @@ int cpu_run(cpu_t *cpu) {
     
     for (int i = 0; i < 100; i++) {
         //debug code
-        //printf("%5d|  ", i + 1);
+        fprintf(debug_output, "%5d|  ", i + 1);
         int error_code;
         if ((error_code = cpu_execute(cpu))) {
             return error_code;
@@ -235,11 +240,11 @@ static int cpu_execute(cpu_t *cpu) {
     disassembler_disassemble(&instruction, opcode);
 
     //debug print:
-    /*
+    
     char formatted_instruction[20];
     disassembler_format(formatted_instruction, 20, &instruction);
-    printf("pc: %x, opcode: %x, instruction: %s\n", cpu->pc, opcode, formatted_instruction);
-    */
+    fprintf(debug_output, "pc: %x, opcode: %x, instruction: %s\n", cpu->pc, opcode, formatted_instruction);
+    
 
     //execute
     int error_code;
@@ -262,8 +267,8 @@ static int cpu_exec_sys_nnn(cpu_t *cpu, const instruction_t *instruction) {
 }
 
 static int cpu_exec_cls(cpu_t *cpu, const instruction_t *instruction) {
-    //debug print:
-    //printf("display cleared\n");
+    //debug print and sleep:
+    fprintf(debug_output, "display cleared\n");
 
     for (int i = 0; i < DISPLAY_WIDTH; i++) {
         for (int j = 0; j < DISPLAY_HEIGHT; j++) {
@@ -518,7 +523,7 @@ static int cpu_exec_rnd_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
 //display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
 static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
     //debug print
-    //printf("drawing sprites... \n");
+    fprintf(debug_output, "drawing sprites... \n");
 
     //sprite coordinates
     uint8_t x = cpu->registers[instruction->operands[0]];
@@ -553,6 +558,8 @@ static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
 
     cpu->pc += 2;
 
+    //debug sleep
+    sleep(1);
     return 0;
 }
 

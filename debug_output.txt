@@ -1,0 +1,122 @@
+    1|  pc: 200, opcode: 121a, instruction: JP 21a
+    2|  pc: 21a, opcode: a2bb, instruction: LD I, 2bb
+    3|  pc: 21c, opcode: f665, instruction: LD V6, I
+    4|  pc: 21e, opcode: a2b4, instruction: LD I, 2b4
+    5|  pc: 220, opcode: f655, instruction: LD I, V6
+    6|  pc: 222, opcode: 6900, instruction: LD V9, 0
+    7|  pc: 224, opcode: 6801, instruction: LD V8, 1
+    8|  pc: 226, opcode: 6b00, instruction: LD Vb, 0
+    9|  pc: 228, opcode: 6d0f, instruction: LD Vd, f
+   10|  pc: 22a, opcode: 6e1f, instruction: LD Ve, 1f
+   11|  pc: 22c, opcode: a2a5, instruction: LD I, 2a5
+   12|  pc: 22e, opcode: 600d, instruction: LD V0, d
+   13|  pc: 230, opcode: 6132, instruction: LD V1, 32
+   14|  pc: 232, opcode: 6200, instruction: LD V2, 0
+   15|  pc: 234, opcode: d02f, instruction: DRW V0, V2, f
+drawing sprites... 
+   16|  pc: 236, opcode: d12f, instruction: DRW V1, V2, f
+drawing sprites... 
+   17|  pc: 238, opcode: 720f, instruction: ADD V2, f
+   18|  pc: 23a, opcode: 321e, instruction: SE V2, 1e
+   19|  pc: 23c, opcode: 1234, instruction: JP 234
+   20|  pc: 234, opcode: d02f, instruction: DRW V0, V2, f
+drawing sprites... 
+   21|  pc: 236, opcode: d12f, instruction: DRW V1, V2, f
+drawing sprites... 
+   22|  pc: 238, opcode: 720f, instruction: ADD V2, f
+   23|  pc: 23a, opcode: 321e, instruction: SE V2, 1e
+   24|  pc: 23e, opcode: d021, instruction: DRW V0, V2, 1
+drawing sprites... 
+   25|  pc: 240, opcode: d121, instruction: DRW V1, V2, 1
+drawing sprites... 
+   26|  pc: 242, opcode: 7201, instruction: ADD V2, 1
+   27|  pc: 244, opcode: 600a, instruction: LD V0, a
+   28|  pc: 246, opcode: a29f, instruction: LD I, 29f
+   29|  pc: 248, opcode: d021, instruction: DRW V0, V2, 1
+drawing sprites... 
+   30|  pc: 24a, opcode: d121, instruction: DRW V1, V2, 1
+drawing sprites... 
+   31|  pc: 24c, opcode: a29f, instruction: LD I, 29f
+   32|  pc: 24e, opcode: dde1, instruction: CLS
+display cleared
+   33|  pc: 250, opcode: fc0a, instruction: LD Vc, K
+   34|  pc: 252, opcode: dde1, instruction: CLS
+display cleared
+   35|  pc: 254, opcode: 4c05, instruction: SNE Vc, 5
+   36|  pc: 258, opcode: 3c04, instruction: SE Vc, 4
+   37|  pc: 25a, opcode: 126a, instruction: JP 26a
+   38|  pc: 26a, opcode: 3c06, instruction: SE Vc, 6
+   39|  pc: 26c, opcode: 1298, instruction: JP 298
+   40|  pc: 298, opcode: a29f, instruction: LD I, 29f
+   41|  pc: 29a, opcode: dde1, instruction: CLS
+display cleared
+   42|  pc: 29c, opcode: 1250, instruction: JP 250
+   43|  pc: 250, opcode: fc0a, instruction: LD Vc, K
+   44|  pc: 252, opcode: dde1, instruction: CLS
+display cleared
+   45|  pc: 254, opcode: 4c05, instruction: SNE Vc, 5
+   46|  pc: 258, opcode: 3c04, instruction: SE Vc, 4
+   47|  pc: 25a, opcode: 126a, instruction: JP 26a
+   48|  pc: 26a, opcode: 3c06, instruction: SE Vc, 6
+   49|  pc: 26c, opcode: 1298, instruction: JP 298
+   50|  pc: 298, opcode: a29f, instruction: LD I, 29f
+   51|  pc: 29a, opcode: dde1, instruction: CLS
+display cleared
+   52|  pc: 29c, opcode: 1250, instruction: JP 250
+   53|  pc: 250, opcode: fc0a, instruction: LD Vc, K
+   54|  pc: 252, opcode: dde1, instruction: CLS
+display cleared
+   55|  pc: 254, opcode: 4c05, instruction: SNE Vc, 5
+   56|  pc: 258, opcode: 3c04, instruction: SE Vc, 4
+   57|  pc: 25a, opcode: 126a, instruction: JP 26a
+   58|  pc: 26a, opcode: 3c06, instruction: SE Vc, 6
+   59|  pc: 26c, opcode: 1298, instruction: JP 298
+   60|  pc: 298, opcode: a29f, instruction: LD I, 29f
+   61|  pc: 29a, opcode: dde1, instruction: CLS
+display cleared
+   62|  pc: 29c, opcode: 1250, instruction: JP 250
+   63|  pc: 250, opcode: fc0a, instruction: LD Vc, K
+   64|  pc: 252, opcode: dde1, instruction: CLS
+display cleared
+   65|  pc: 254, opcode: 4c05, instruction: SNE Vc, 5
+   66|  pc: 258, opcode: 3c04, instruction: SE Vc, 4
+   67|  pc: 25a, opcode: 126a, instruction: JP 26a
+   68|  pc: 26a, opcode: 3c06, instruction: SE Vc, 6
+   69|  pc: 26c, opcode: 1298, instruction: JP 298
+   70|  pc: 298, opcode: a29f, instruction: LD I, 29f
+   71|  pc: 29a, opcode: dde1, instruction: CLS
+display cleared
+   72|  pc: 29c, opcode: 1250, instruction: JP 250
+   73|  pc: 250, opcode: fc0a, instruction: LD Vc, K
+   74|  pc: 252, opcode: dde1, instruction: CLS
+display cleared
+   75|  pc: 254, opcode: 4c05, instruction: SNE Vc, 5
+   76|  pc: 258, opcode: 3c04, instruction: SE Vc, 4
+   77|  pc: 25a, opcode: 126a, instruction: JP 26a
+   78|  pc: 26a, opcode: 3c06, instruction: SE Vc, 6
+   79|  pc: 26c, opcode: 1298, instruction: JP 298
+   80|  pc: 298, opcode: a29f, instruction: LD I, 29f
+   81|  pc: 29a, opcode: dde1, instruction: CLS
+display cleared
+   82|  pc: 29c, opcode: 1250, instruction: JP 250
+   83|  pc: 250, opcode: fc0a, instruction: LD Vc, K
+   84|  pc: 252, opcode: dde1, instruction: CLS
+display cleared
+   85|  pc: 254, opcode: 4c05, instruction: SNE Vc, 5
+   86|  pc: 258, opcode: 3c04, instruction: SE Vc, 4
+   87|  pc: 25a, opcode: 126a, instruction: JP 26a
+   88|  pc: 26a, opcode: 3c06, instruction: SE Vc, 6
+   89|  pc: 26c, opcode: 1298, instruction: JP 298
+   90|  pc: 298, opcode: a29f, instruction: LD I, 29f
+   91|  pc: 29a, opcode: dde1, instruction: CLS
+display cleared
+   92|  pc: 29c, opcode: 1250, instruction: JP 250
+   93|  pc: 250, opcode: fc0a, instruction: LD Vc, K
+   94|  pc: 252, opcode: dde1, instruction: CLS
+display cleared
+   95|  pc: 254, opcode: 4c05, instruction: SNE Vc, 5
+   96|  pc: 258, opcode: 3c04, instruction: SE Vc, 4
+   97|  pc: 25a, opcode: 126a, instruction: JP 26a
+   98|  pc: 26a, opcode: 3c06, instruction: SE Vc, 6
+   99|  pc: 26c, opcode: 1298, instruction: JP 298
+  100|  pc: 298, opcode: a29f, instruction: LD I, 29f

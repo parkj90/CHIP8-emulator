@@ -1,11 +1,8 @@
-//main.c
+//disassembler_dump.c
 
 #include <stdio.h>
-#include <stdbool.h>
 #include "rombuffer.h"
 #include "disassembler.h"
-#include "cpu.h"
-#include "ncurses_io.h"
 
 int main(void) {
     FILE *cnct4 = fopen("../c8games/CONNECT4", "r");
@@ -18,23 +15,11 @@ int main(void) {
     if (cnct4_opcodes == NULL) {
         perror("Error: ");
         return -1;
-    } 
-
-    cpu_t *cpu = cpu_new(&ncurses_io_interface);
-    if (cpu == NULL) {
-        return -1;
     }
 
-    ncurses_io_init();
-    cpu_load(cpu, cnct4_opcodes);
+    disassembler_dump(cnct4_opcodes);
 
-    cpu_run(cpu);
+    printf("finished!\n");
 
-    ncurses_io_terminate();
-    cpu_free(cpu);
     rombuffer_free(cnct4_opcodes);
-
-    printf("connect 4 finished\n");
-    
-    return 0;
 }

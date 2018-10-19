@@ -7,7 +7,7 @@
 #include "cpu.h"
 #include "ncurses_io.h"
 
-#define FILL_CHAR 219
+#define FILL_CHAR 97
 #define CLEAR_CHAR ' '
 
 
