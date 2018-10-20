@@ -28,17 +28,12 @@ int main(void) {
     ncurses_io_init();
     cpu_load(cpu, cnct4_opcodes);
 
-    int e;
-    e = cpu_run(cpu);
+    int error_code;
+    error_code = cpu_run(cpu);
 
     ncurses_io_terminate();
     cpu_free(cpu);
     rombuffer_free(cnct4_opcodes);
 
-    printf("cpu_error_code: %d\n", e);
-
-
-    printf("connect 4 terminated\n");
-    
-    return e;
+    return error_code;
 }

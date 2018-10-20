@@ -150,11 +150,7 @@ static int (* const exec_instruction_table[])(cpu_t *cpu, const instruction_t *i
     [INSTRUCTION_DATA]        = cpu_exec_data
 };
 
-FILE *debug_output;
-static unsigned int instruction_num = 0;
-
 cpu_t *cpu_new(const cpu_io_interface_t *cpu_io_interface) {
-   debug_output = fopen("debug_output.txt", "w");
     cpu_t *cpu = malloc(sizeof(cpu_t));
     if (cpu == NULL) {
         return NULL;
@@ -222,7 +218,6 @@ void cpu_free(cpu_t *cpu) {
     }
 
     free(cpu);
-    fclose(debug_output);
     return;
 }
 
@@ -232,11 +227,6 @@ static int cpu_execute(cpu_t *cpu) {
     //decode
     instruction_t instruction;
     disassembler_disassemble(&instruction, opcode);
-
-    //debug file output
-    char formatted_instruction[20];
-    disassembler_format(formatted_instruction, 20, &instruction);
-    fprintf(debug_output, "%5d | pc: %x  opcode: %4x   %s\n", instruction_num++, cpu->pc, opcode, formatted_instruction);
 
     //execute
     int error_code;
@@ -259,8 +249,6 @@ static int cpu_exec_sys_nnn(cpu_t *cpu, const instruction_t *instruction) {
 }
 
 static int cpu_exec_cls(cpu_t *cpu, const instruction_t *instruction) {
-    //debug print
-    fprintf(debug_output, "clearing screen...\n");
     for (int i = 0; i < DISPLAY_WIDTH; i++) {
         for (int j = 0; j < DISPLAY_HEIGHT; j++) {
             cpu->cpu_io_interface->draw_pixel(i, j, false);
@@ -513,9 +501,6 @@ static int cpu_exec_rnd_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
 
 //display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
 static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
-    //debug print
-    fprintf(debug_output, "drawing to screen...\n");
-
     //sprite coordinates
     uint8_t x = cpu->registers[instruction->operands[0]];
     uint8_t y = cpu->registers[instruction->operands[1]];
@@ -548,9 +533,6 @@ static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
     }
 
     cpu->pc += 2;
-
-    //debug sleep remove after ncurses is fixed
-    sleep(1);
 
     return 0;
 }
