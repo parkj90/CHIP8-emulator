@@ -10,7 +10,12 @@
 typedef struct cpu cpu_t;
 
 typedef struct cpu_io_interface {
-    int (*get_keyboard)();
+    //for hexadecimal keyboard input:
+    //  16th bit -> f           1 - key pressed
+    //   |          |           0 - key not pressed
+    //   1st bit -> 0
+    uint16_t (*get_keyboard)();
+
     uint8_t (*wait_keypress)();
 
     bool (*get_pixel)(uint8_t x, uint8_t y);    

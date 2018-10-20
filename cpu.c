@@ -15,11 +15,6 @@
 #define FONT_SPRITE_HEIGHT 5
 
 typedef struct cpu {
-    //for hexadecimal keyboard input:
-    //  16th bit -> f           1 - key pressed
-    //   |          |           0 - key not pressed
-    //   1st bit -> 0
-
     const cpu_io_interface_t *cpu_io_interface;
 
     uint8_t registers[16];
@@ -539,7 +534,14 @@ static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
 
 //skip next instruction if key wth the value of Vx is pressed
 static int cpu_exec_skp_vx(cpu_t *cpu, const instruction_t *instruction) {
-    if (cpu->cpu_io_interface->get_keyboard() == cpu->registers[instruction->operands[0]]) {
+    uint8_t key_value = cpu->registers[instruction->operands[0]];
+    if (key_value > 0x0F) {
+        return CPU_ERROR_8BIT_OOB;
+    }
+
+    uint16_t bitmask = 1 << key_value;
+
+    if (cpu->cpu_io_interface->get_keyboard() & bitmask) {
         cpu->pc += 2;
     }
 
@@ -550,7 +552,14 @@ static int cpu_exec_skp_vx(cpu_t *cpu, const instruction_t *instruction) {
 
 //skip next instruction if key with the value of Vx is not pressed
 static int cpu_exec_sknp_vx(cpu_t *cpu, const instruction_t *instruction) {
-    if (cpu->cpu_io_interface->get_keyboard() != cpu->registers[instruction->operands[0]]) {
+    uint8_t key_value = cpu->registers[instruction->operands[0]];
+    if (key_value > 0x0F) {
+        return CPU_ERROR_8BIT_OOB;
+    }
+
+    uint16_t bitmask = 1 << key_value;
+
+    if (!(cpu->cpu_io_interface->get_keyboard() & bitmask)) {
         cpu->pc += 2;
     }
 

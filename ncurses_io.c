@@ -30,7 +30,7 @@ enum key_map {
     KEY_MAP_F = '.'
 };
 
-static int ncurses_io_get_keyboard();
+static uint16_t ncurses_io_get_keyboard();
 static uint8_t ncurses_io_wait_keypress();
 static bool ncurses_io_get_pixel(uint8_t x, uint8_t y);    
 static void ncurses_io_draw_pixel(uint8_t x, uint8_t y, bool fill);
@@ -56,42 +56,42 @@ void ncurses_io_terminate() {
     endwin();
 }
 
-static int ncurses_io_get_keyboard() {
+static uint16_t ncurses_io_get_keyboard() {
     switch (wgetch(win)) {
         case ERR:
-            return -1;
-        case KEY_MAP_1:
-            return 0x01;
-        case KEY_MAP_2:
-            return 0x02;
-        case KEY_MAP_3:
-            return 0x03;
-        case KEY_MAP_C:
-            return 0x0C;
-        case KEY_MAP_4:
-            return 0x04;
-        case KEY_MAP_5:
-            return 0x05;
-        case KEY_MAP_6:
-            return 0x06;
-        case KEY_MAP_D:
-            return 0x0D;
-        case KEY_MAP_7:
-            return 0x07;
-        case KEY_MAP_8:
-            return 0x08;
-        case KEY_MAP_9:
-            return 0x09;
-        case KEY_MAP_E:
-            return 0x0E;
-        case KEY_MAP_A:
-            return 0x0A;
-        case KEY_MAP_0:
             return 0x00;
+        case KEY_MAP_1:
+            return 1 << 0x01;
+        case KEY_MAP_2:
+            return 1 << 0x02;
+        case KEY_MAP_3:
+            return 1 << 0x03;
+        case KEY_MAP_C:
+            return 1 << 0x0C;
+        case KEY_MAP_4:
+            return 1 << 0x04;
+        case KEY_MAP_5:
+            return 1 << 0x05;
+        case KEY_MAP_6:
+            return 1 << 0x06;
+        case KEY_MAP_D:
+            return 1 << 0x0D;
+        case KEY_MAP_7:
+            return 1 << 0x07;
+        case KEY_MAP_8:
+            return 1 << 0x08;
+        case KEY_MAP_9:
+            return 1 << 0x09;
+        case KEY_MAP_E:
+            return 1 << 0x0E;
+        case KEY_MAP_A:
+            return 1 << 0x0A;
+        case KEY_MAP_0:
+            return 1;
         case KEY_MAP_B:
-            return 0x0B;
+            return 1 << 0x0B;
         case KEY_MAP_F:
-            return 0x0F;
+            return 1 << 0x0F;
     }
 
     return -1;
