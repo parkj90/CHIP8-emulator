@@ -63,23 +63,17 @@ static int cpu_execute(cpu_t *cpu);
 static uint16_t cpu_fetch_opcode(cpu_t *cpu);
 
 enum cpu_error_code {
-    CPU_ERROR_NULL_PNTR        = -1,
-    CPU_ERROR_8BIT_OOB         = -2,
-    CPU_ERROR_PC_OOB           = -3,
-    CPU_ERROR_WRITE_OOB        = -4,
-    CPU_ERROR_STACK_UNDERFLOW  = -5,
-    CPU_ERROR_STACK_OVERFLOW   = -6,
-    CPU_ERROR_DATA_EXEC        = -7
+    CPU_ERROR_SUCCESS          =  0,    //success
+    CPU_ERROR_NULL_PNTR        = -1,    //NULL pointer returned
+    CPU_ERROR_8BIT_OOB         = -2,    //value exceeds 0x0F
+    CPU_ERROR_PC_OOB           = -3,    //pc set to memory address < 0x2
+    CPU_ERROR_WRITE_OOB        = -4,    //attempted write to memory addr
+    CPU_ERROR_STACK_UNDERFLOW  = -5,    //stack underflow
+    CPU_ERROR_STACK_OVERFLOW   = -6,    //stack overflow
+    CPU_ERROR_DATA_EXEC        = -7,    //data opcode ran as executable
+    CPU_ERROR_UNSUPORTED       = -8     //unsupported opcode ran as executable
 };
 
-//for cpu_exec functions:
-//       0 - success
-//      -2 - value exceeds 0x0F
-//      -3 - pc set to memory address < 0x200
-//      -4 - attempted write to memory address < 0x200 
-//      -5 - stack underflow
-//      -6 - stack overflow
-//      -7 - data opcode ran as executable
 static int cpu_exec_sys_nnn(cpu_t *cpu, const instruction_t *instruction);
 static int cpu_exec_cls(cpu_t *cpu, const instruction_t *instruction);
 static int cpu_exec_ret(cpu_t *cpu, const instruction_t *instruction);
@@ -157,6 +151,7 @@ static int (* const exec_instruction_table[])(cpu_t *cpu, const instruction_t *i
 };
 
 FILE *debug_output;
+static unsigned int instruction_num = 0;
 
 cpu_t *cpu_new(const cpu_io_interface_t *cpu_io_interface) {
    debug_output = fopen("debug_output.txt", "w");
@@ -211,7 +206,7 @@ int cpu_run(cpu_t *cpu) {
         return CPU_ERROR_NULL_PNTR;
     }
     
-    for (int i = 0; i < 900; i++) {
+    for (int i = 0; i < 100000; i++) {
         int error_code;
         if ((error_code = cpu_execute(cpu))) {
             return error_code;
@@ -227,6 +222,7 @@ void cpu_free(cpu_t *cpu) {
     }
 
     free(cpu);
+    fclose(debug_output);
     return;
 }
 
@@ -236,6 +232,11 @@ static int cpu_execute(cpu_t *cpu) {
     //decode
     instruction_t instruction;
     disassembler_disassemble(&instruction, opcode);
+
+    //debug file output
+    char formatted_instruction[20];
+    disassembler_format(formatted_instruction, 20, &instruction);
+    fprintf(debug_output, "%5d | pc: %x  opcode: %4x   %s\n", instruction_num++, cpu->pc, opcode, formatted_instruction);
 
     //execute
     int error_code;
@@ -258,6 +259,8 @@ static int cpu_exec_sys_nnn(cpu_t *cpu, const instruction_t *instruction) {
 }
 
 static int cpu_exec_cls(cpu_t *cpu, const instruction_t *instruction) {
+    //debug print
+    fprintf(debug_output, "clearing screen...\n");
     for (int i = 0; i < DISPLAY_WIDTH; i++) {
         for (int j = 0; j < DISPLAY_HEIGHT; j++) {
             cpu->cpu_io_interface->draw_pixel(i, j, false);
@@ -510,6 +513,9 @@ static int cpu_exec_rnd_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
 
 //display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
 static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
+    //debug print
+    fprintf(debug_output, "drawing to screen...\n");
+
     //sprite coordinates
     uint8_t x = cpu->registers[instruction->operands[0]];
     uint8_t y = cpu->registers[instruction->operands[1]];
@@ -573,11 +579,16 @@ static int cpu_exec_sknp_vx(cpu_t *cpu, const instruction_t *instruction) {
 
 //set Vx = delay timer value
 static int cpu_exec_ld_vx_dt(cpu_t *cpu, const instruction_t *instruction) {
+    //delay timer funcionality has not been added yet
+    return -8;
+
+    /*
     cpu->registers[instruction->operands[0]] = cpu->DT;
 
     cpu->pc += 2;
     
     return 0;
+    */
 }
 
 //wait for a key press, store the value of the key in Vx
@@ -592,20 +603,30 @@ static int cpu_exec_ld_vx_k(cpu_t *cpu, const instruction_t *instruction) {
 
 //set delay timer = Vx
 static int cpu_exec_ld_dt_vx(cpu_t *cpu, const instruction_t *instruction) {
+    //delay timer funcionality has not been added yet
+    return -8;
+
+    /*
     cpu->DT = cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
 
     return 0;
+    */
 }
 
 //set sound timer = Vx
 static int cpu_exec_ld_st_vx(cpu_t *cpu, const instruction_t *instruction) {
+    //sound timer funcionality has not been added yet
+    return -8;
+
+    /*
     cpu->ST = cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
 
     return 0;
+    */
 }
 
 //set I = I + Vx

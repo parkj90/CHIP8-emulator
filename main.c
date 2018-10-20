@@ -8,7 +8,7 @@
 #include "ncurses_io.h"
 
 int main(void) {
-    FILE *cnct4 = fopen("../c8games/CONNECT4", "r");
+    FILE *cnct4 = fopen("../c8games/INVADERS", "r");
     if (cnct4 == NULL) {
         perror("Error: ");
         return -1;
@@ -28,13 +28,17 @@ int main(void) {
     ncurses_io_init();
     cpu_load(cpu, cnct4_opcodes);
 
-    cpu_run(cpu);
+    int e;
+    e = cpu_run(cpu);
 
     ncurses_io_terminate();
     cpu_free(cpu);
     rombuffer_free(cnct4_opcodes);
 
-    printf("connect 4 finished\n");
+    printf("cpu_error_code: %d\n", e);
+
+
+    printf("connect 4 terminated\n");
     
-    return 0;
+    return e;
 }

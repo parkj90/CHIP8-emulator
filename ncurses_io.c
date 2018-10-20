@@ -57,7 +57,7 @@ void ncurses_io_terminate() {
 }
 
 static int ncurses_io_get_keyboard() {
-    switch (getch()) {
+    switch (wgetch(win)) {
         case ERR:
             return -1;
         case KEY_MAP_1:
@@ -104,7 +104,7 @@ static uint8_t ncurses_io_wait_keypress() {
     nodelay(win, false);
 
     while (unacceptable) {
-        stdinput_char = getch();
+        stdinput_char = wgetch(win);
         unacceptable = false;
         switch (stdinput_char) {
             case KEY_MAP_1:
