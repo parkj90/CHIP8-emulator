@@ -8,14 +8,16 @@
 #include "ncurses_io.h"
 
 int main(void) {
-    FILE *cnct4 = fopen("../c8games/INVADERS", "r");
-    if (cnct4 == NULL) {
+    FILE *rom = fopen("../c8games/INVADERS", "r");
+    const char *rom_name = "INVADERS";
+
+    if (rom == NULL) {
         perror("Error: ");
         return -1;
     }
 
-    rombuffer_t *cnct4_opcodes = rombuffer_read(cnct4);
-    if (cnct4_opcodes == NULL) {
+    rombuffer_t *rom_opcodes = rombuffer_read(rom);
+    if (rom_opcodes == NULL) {
         perror("Error: ");
         return -1;
     } 
@@ -25,15 +27,19 @@ int main(void) {
         return -1;
     }
 
+    printf("Starting %s...\n", rom_name);
     ncurses_io_init();
-    cpu_load(cpu, cnct4_opcodes);
+    cpu_load(cpu, rom_opcodes);
 
     int error_code;
     error_code = cpu_run(cpu);
 
     ncurses_io_terminate();
     cpu_free(cpu);
-    rombuffer_free(cnct4_opcodes);
+    rombuffer_free(rom_opcodes);
 
+    if (error_code) {
+        printf("%d\n", error_code);
+    }
     return error_code;
 }

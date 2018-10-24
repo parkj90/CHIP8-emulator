@@ -20,7 +20,7 @@ static const uint16_t operand_masks[][2] = {
 static const instruction_info_t instruction_info_table[] = {
     {
         INSTRUCTION_SYS_NNN,
-        0xF000,
+        0xFFFF,
         0x0000,
         "SYS",
         1,
