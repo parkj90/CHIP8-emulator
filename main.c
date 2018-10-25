@@ -8,8 +8,8 @@
 #include "ncurses_io.h"
 
 int main(void) {
-    FILE *rom = fopen("../c8games/INVADERS", "r");
-    const char *rom_name = "INVADERS";
+    FILE *rom = fopen("../c8games/CONNECT4", "r");
+    const char *rom_name = "CNCT4";
 
     if (rom == NULL) {
         perror("Error: ");

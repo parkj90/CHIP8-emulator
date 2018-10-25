@@ -12,6 +12,7 @@
 
 
 enum key_map {
+    KEY_MAP_quit = 'q',
     KEY_MAP_1 = '6',
     KEY_MAP_2 = '7',
     KEY_MAP_3 = '8',
@@ -30,7 +31,7 @@ enum key_map {
     KEY_MAP_F = '.'
 };
 
-static uint16_t ncurses_io_get_keyboard();
+static uint32_t ncurses_io_get_keyboard();
 static uint8_t ncurses_io_wait_keypress();
 static bool ncurses_io_get_pixel(uint8_t x, uint8_t y);    
 static void ncurses_io_draw_pixel(uint8_t x, uint8_t y, bool fill);
@@ -56,8 +57,10 @@ void ncurses_io_terminate() {
     endwin();
 }
 
-static uint16_t ncurses_io_get_keyboard() {
+static uint32_t ncurses_io_get_keyboard() {
     switch (wgetch(win)) {
+        case KEY_MAP_quit:
+            return -1;
         case ERR:
             return 0x00;
         case KEY_MAP_1:
@@ -94,7 +97,7 @@ static uint16_t ncurses_io_get_keyboard() {
             return 1 << 0x0F;
     }
 
-    return -1;
+    return 0x00;
 }
 
 static uint8_t ncurses_io_wait_keypress() {
@@ -107,6 +110,8 @@ static uint8_t ncurses_io_wait_keypress() {
         stdinput_char = wgetch(win);
         unacceptable = false;
         switch (stdinput_char) {
+            case KEY_MAP_quit:
+                return 0x10;
             case KEY_MAP_1:
                 return_value = 0x01;
                 break;

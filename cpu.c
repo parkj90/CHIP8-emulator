@@ -58,6 +58,7 @@ static int cpu_execute(cpu_t *cpu);
 static uint16_t cpu_fetch_opcode(cpu_t *cpu);
 
 enum cpu_error_code {
+    CPU_ERROR_QUIT             =  1,    //program terminated with keyboard input
     CPU_ERROR_SUCCESS          =  0,    //success
     CPU_ERROR_NULL_PNTR        = -1,    //NULL pointer returned
     CPU_ERROR_8BIT_OOB         = -2,    //value exceeds 0x0F
@@ -541,7 +542,13 @@ static int cpu_exec_skp_vx(cpu_t *cpu, const instruction_t *instruction) {
 
     uint16_t bitmask = 1 << key_value;
 
-    if (cpu->cpu_io_interface->get_keyboard() & bitmask) {
+    uint32_t key_input = cpu->cpu_io_interface->get_keyboard();
+    
+    if (key_input > 0xFFFF) {
+        return CPU_ERROR_QUIT;
+    }
+
+    if (key_input & bitmask) {
         cpu->pc += 2;
     }
 
@@ -559,7 +566,13 @@ static int cpu_exec_sknp_vx(cpu_t *cpu, const instruction_t *instruction) {
 
     uint16_t bitmask = 1 << key_value;
 
-    if (!(cpu->cpu_io_interface->get_keyboard() & bitmask)) {
+    uint32_t keyboard_state = cpu->cpu_io_interface->get_keyboard();
+
+    if (keyboard_state > 0xFFFF) {
+        return CPU_ERROR_QUIT;
+    }
+
+    if (!(keyboard_state & bitmask)) {
         cpu->pc += 2;
     }
 
@@ -585,6 +598,11 @@ static int cpu_exec_ld_vx_dt(cpu_t *cpu, const instruction_t *instruction) {
 //wait for a key press, store the value of the key in Vx
 static int cpu_exec_ld_vx_k(cpu_t *cpu, const instruction_t *instruction) {
     uint8_t key = cpu->cpu_io_interface->wait_keypress();
+
+    if (key > 0x0F) {
+        return CPU_ERROR_QUIT;
+    }
+
     cpu->registers[instruction->operands[0]] = key;
 
     cpu->pc += 2;
