@@ -198,7 +198,7 @@ int cpu_run(cpu_t *cpu) {
         return CPU_ERROR_NULL_PNTR;
     }
     
-    for (int i = 0; i < 100000; i++) {
+    for (;;) {
         int error_code;
         if ((error_code = cpu_execute(cpu))) {
             return error_code;

@@ -29,6 +29,7 @@ int cpu_reset(cpu_t *cpu, const rombuffer_t *rom);
 void cpu_free(cpu_t *cpu);
 
 //for methods returning int:
+//       1 - program terminated with keyboard input
 //       0 - success
 //      -1 - pointer is NULL
 //
