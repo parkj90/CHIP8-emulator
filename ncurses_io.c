@@ -60,7 +60,7 @@ void ncurses_io_terminate() {
 static uint32_t ncurses_io_get_keyboard() {
     switch (wgetch(win)) {
         case KEY_MAP_quit:
-            return -1;
+            return 0x10000;
         case ERR:
             return 0x00;
         case KEY_MAP_1:

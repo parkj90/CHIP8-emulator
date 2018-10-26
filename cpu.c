@@ -290,7 +290,7 @@ static int cpu_exec_call_nnn(cpu_t *cpu, const instruction_t *instruction) {
     }
 
     cpu->sp++;
-    cpu->stack[cpu->sp] = cpu->pc;
+    cpu->stack[cpu->sp] = cpu->pc + 2;
 
     if (instruction->operands[0] < 0x200) {
         return CPU_ERROR_PC_OOB;
