@@ -14,6 +14,7 @@ typedef struct cpu_io_interface {
     //  16th bit -> f           1 - key pressed
     //   |          |           0 - key not pressed
     //   1st bit -> 0
+    //
     uint16_t (*get_keyboard)();
 
     uint8_t (*wait_keypress)();
@@ -24,8 +25,8 @@ typedef struct cpu_io_interface {
 
 cpu_t *cpu_new(const cpu_io_interface_t *cpu_io_interface);
 int cpu_load(cpu_t *cpu, const rombuffer_t *rom);
-int cpu_run(cpu_t *cpu);
 int cpu_reset(cpu_t *cpu, const rombuffer_t *rom);
+int cpu_execute(cpu_t *cpu);
 void cpu_free(cpu_t *cpu);
 
 //for methods returning int:

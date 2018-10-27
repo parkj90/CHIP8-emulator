@@ -54,7 +54,6 @@ static const uint8_t font_library[] = {
 
 static const size_t font_library_size = sizeof(font_library) / sizeof(uint8_t);
 
-static int cpu_execute(cpu_t *cpu);
 static uint16_t cpu_fetch_opcode(cpu_t *cpu);
 
 enum cpu_error_code {
@@ -192,31 +191,7 @@ int cpu_reset(cpu_t *cpu, const rombuffer_t *rom) {
     return 0;
 }
 
-int cpu_run(cpu_t *cpu) {
-    if (cpu == NULL) {
-        return CPU_ERROR_NULL_PNTR;
-    }
-    
-    for (int i = 0; i < 100000; i++) {
-        int error_code;
-        if ((error_code = cpu_execute(cpu))) {
-            return error_code;
-        }
-    }
-
-    return 0;
-}
-
-void cpu_free(cpu_t *cpu) {
-    if (cpu == NULL) {
-        return;
-    }
-
-    free(cpu);
-    return;
-}
-
-static int cpu_execute(cpu_t *cpu) {
+int cpu_execute(cpu_t *cpu) {
     //fetch
     const uint16_t opcode = cpu_fetch_opcode(cpu);
     //decode
@@ -230,6 +205,15 @@ static int cpu_execute(cpu_t *cpu) {
     }
 
     return 0;
+}
+
+void cpu_free(cpu_t *cpu) {
+    if (cpu == NULL) {
+        return;
+    }
+
+    free(cpu);
+    return;
 }
 
 static uint16_t cpu_fetch_opcode(cpu_t *cpu) {

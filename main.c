@@ -2,14 +2,19 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <pthread.h>
 #include "rombuffer.h"
 #include "disassembler.h"
 #include "cpu.h"
 #include "ncurses_io.h"
 
+static int error_code = 0;
+
+static void *cpu_thread_function(void *cpu);
+
 int main(void) {
-    FILE *rom = fopen("../c8games/INVADERS", "r");
-    const char *rom_name = "INVADERS";
+    FILE *rom = fopen("../c8games/CONNECT4", "r");
+    const char *rom_name = "CONNECT4";
 
     if (rom == NULL) {
         perror("Error: ");
@@ -28,11 +33,20 @@ int main(void) {
     }
 
     printf("Starting %s...\n", rom_name);
-    ncurses_io_init();
+
     cpu_load(cpu, rom_opcodes);
 
-    int error_code;
-    error_code = cpu_run(cpu);
+    pthread_t cpu_thread;
+    int cpu_thread_ret;
+
+    ncurses_io_init();
+
+    cpu_thread_ret = pthread_create(&cpu_thread, NULL, cpu_thread_function, (void *)cpu); 
+    if (cpu_thread_ret) {
+        fprintf(stderr, "error: pthread_create() returns: %d\n", cpu_thread_ret);
+    }
+
+    pthread_join(cpu_thread, NULL);
 
     ncurses_io_terminate();
     cpu_free(cpu);
@@ -41,5 +55,17 @@ int main(void) {
     if (error_code) {
         printf("%d\n", error_code);
     }
+
     return error_code;
+}
+
+static void *cpu_thread_function(void *cpu) {
+    while (!error_code) {
+        //sleep cpu for 1 microsecond
+        //increment counter
+        //if counter -> 1 second, decrement timers with "cpu_tick()"
+        error_code = cpu_execute((cpu_t *) cpu);
+    }
+
+    return NULL;
 }
