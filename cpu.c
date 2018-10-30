@@ -208,6 +208,22 @@ int cpu_execute(cpu_t *cpu) {
     return 0;
 }
 
+int cpu_tick(cpu_t *cpu) {
+    if (cpu == NULL) {
+        return -1;
+    }
+
+    if (cpu->DT > 0) {
+        cpu->DT--;
+    }
+
+    if (cpu->ST > 0) {
+        cpu->ST--;
+    }
+
+    return 0;
+}
+
 void cpu_free(cpu_t *cpu) {
     if (cpu == NULL) {
         return;
@@ -567,16 +583,11 @@ static int cpu_exec_sknp_vx(cpu_t *cpu, const instruction_t *instruction) {
 
 //set Vx = delay timer value
 static int cpu_exec_ld_vx_dt(cpu_t *cpu, const instruction_t *instruction) {
-    //delay timer funcionality has not been added yet
-    return -8;
-
-    /*
     cpu->registers[instruction->operands[0]] = cpu->DT;
 
     cpu->pc += 2;
     
     return 0;
-    */
 }
 
 //wait for a key press, store the value of the key in Vx
@@ -596,30 +607,20 @@ static int cpu_exec_ld_vx_k(cpu_t *cpu, const instruction_t *instruction) {
 
 //set delay timer = Vx
 static int cpu_exec_ld_dt_vx(cpu_t *cpu, const instruction_t *instruction) {
-    //delay timer funcionality has not been added yet
-    return -8;
-
-    /*
     cpu->DT = cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
 
     return 0;
-    */
 }
 
 //set sound timer = Vx
 static int cpu_exec_ld_st_vx(cpu_t *cpu, const instruction_t *instruction) {
-    //sound timer funcionality has not been added yet
-    return -8;
-
-    /*
     cpu->ST = cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
 
     return 0;
-    */
 }
 
 //set I = I + Vx

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <unistd.h>
 #include "rombuffer.h"
 #include "disassembler.h"
 #include "cpu.h"
@@ -60,10 +61,15 @@ int main(void) {
 }
 
 static void *cpu_thread_function(void *cpu) {
+    int us_counter = 0;
     while (!error_code) {
-        //sleep cpu for 1 microsecond
-        //increment counter
-        //if counter -> 1 second, decrement timers with "cpu_tick()"
+        usleep(1);
+        us_counter++;
+        if (us_counter >= 1000000) {
+            us_counter = 0;
+            cpu_tick(cpu);
+        }
+
         error_code = cpu_execute((cpu_t *) cpu);
     }
 

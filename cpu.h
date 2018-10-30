@@ -26,6 +26,7 @@ cpu_t *cpu_new(const cpu_io_interface_t *cpu_io_interface);
 int cpu_load(cpu_t *cpu, const rombuffer_t *rom);
 int cpu_reset(cpu_t *cpu, const rombuffer_t *rom);
 int cpu_execute(cpu_t *cpu);
+int cpu_tick(cpu_t *cpu);
 void cpu_free(cpu_t *cpu);
 
 //for methods returning int:
