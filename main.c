@@ -63,11 +63,11 @@ int main(void) {
 static void *cpu_thread_function(void *cpu) {
     int us_counter = 0;
     while (!error_code) {
-        usleep(1);
+        usleep(100);
         us_counter++;
-        if (us_counter >= 1000000) {
+        if (us_counter >= 166) {
             us_counter = 0;
-            cpu_tick(cpu);
+            cpu_decrement_timers(cpu);
         }
 
         error_code = cpu_execute((cpu_t *) cpu);

@@ -208,7 +208,7 @@ int cpu_execute(cpu_t *cpu) {
     return 0;
 }
 
-int cpu_tick(cpu_t *cpu) {
+int cpu_decrement_timers(cpu_t *cpu) {
     if (cpu == NULL) {
         return -1;
     }
