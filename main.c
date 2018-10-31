@@ -9,8 +9,6 @@
 #include "cpu.h"
 #include "ncurses_io.h"
 
-static int error_code = 0;
-
 static void *cpu_thread_function(void *cpu);
 
 int main(void) {
@@ -47,22 +45,24 @@ int main(void) {
         fprintf(stderr, "error: pthread_create() returns: %d\n", cpu_thread_ret);
     }
 
-    pthread_join(cpu_thread, NULL);
+    int *cpu_error_ptr;
+    pthread_join(cpu_thread, (void *)&cpu_error_ptr);
 
     ncurses_io_terminate();
     cpu_free(cpu);
     rombuffer_free(rom_opcodes);
 
-    if (error_code) {
-        printf("%d\n", error_code);
+    if (*cpu_error_ptr) {
+        printf("%d\n", *cpu_error_ptr);
     }
 
-    return error_code;
+    return *cpu_error_ptr;
 }
 
 static void *cpu_thread_function(void *cpu) {
     int us_counter = 0;
-    while (!error_code) {
+    static int cpu_error = 0;
+    while (!cpu_error) {
         usleep(100);
         us_counter++;
         if (us_counter >= 166) {
@@ -70,8 +70,8 @@ static void *cpu_thread_function(void *cpu) {
             cpu_decrement_timers(cpu);
         }
 
-        error_code = cpu_execute((cpu_t *) cpu);
+        cpu_error = cpu_execute((cpu_t *) cpu);
     }
 
-    return NULL;
+    return &cpu_error;
 }
