@@ -20,8 +20,6 @@ typedef struct cpu {
     uint8_t registers[16];
     uint16_t I;
 
-    bool VF;
-
     uint8_t DT;
     uint8_t ST;
 
@@ -173,7 +171,6 @@ int cpu_reset(cpu_t *cpu, const rombuffer_t *rom) {
 
     memset(cpu->registers, 0, sizeof(cpu->registers));
     cpu->I = 0;
-    cpu->VF = false;
     cpu->DT = 0;
     cpu->ST = 0;
     cpu->pc = 0;
@@ -391,9 +388,9 @@ static int cpu_exec_xor_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
 //set Vx = Vx + Vy, set VF = carry
 static int cpu_exec_add_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     if (cpu->registers[instruction->operands[0]] + cpu->registers[instruction->operands[1]] > 0xFF) {
-        cpu->VF = true;
+        cpu->registers[0x0F] = 1;
     } else {
-        cpu->VF = false;
+        cpu->registers[0x0F] = 0;
     }
 
     cpu->registers[instruction->operands[0]] += cpu->registers[instruction->operands[1]];
@@ -406,9 +403,9 @@ static int cpu_exec_add_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
 //set Vx = Vx - Vy, set VF = NOT borrow
 static int cpu_exec_sub_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     if (cpu->registers[instruction->operands[0]] > cpu->registers[instruction->operands[1]]) {
-        cpu->VF = true;
+        cpu->registers[0x0F] = 1;
     } else {
-        cpu->VF = false;
+        cpu->registers[0x0F] = 0;
     }
 
     cpu->registers[instruction->operands[0]] -= cpu->registers[instruction->operands[1]];
@@ -418,9 +415,9 @@ static int cpu_exec_sub_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     return 0;
 }
 
-//set Vx = Vx + SHR 1
+//set Vx = Vx SHR 1
 static int cpu_exec_shr_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
-    cpu->VF = cpu->registers[instruction->operands[0]] & 0x01;
+    cpu->registers[0x0F] = cpu->registers[instruction->operands[0]] & 0x01;
 
     cpu->registers[instruction->operands[0]] >>= 1;
 
@@ -432,9 +429,9 @@ static int cpu_exec_shr_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
 //set Vx = Vy - Vx, set VF = NOT borrow
 static int cpu_exec_subn_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
     if (cpu->registers[instruction->operands[1]] > cpu->registers[instruction->operands[0]]) {
-        cpu->VF = true;
+        cpu->registers[0x0F] = 1;
     } else {
-        cpu->VF = false;
+        cpu->registers[0x0F] = 0;
     }
 
     cpu->registers[instruction->operands[0]] = cpu->registers[instruction->operands[1]] - cpu->registers[instruction->operands[0]];
@@ -446,7 +443,7 @@ static int cpu_exec_subn_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
 
 //set Vx = Vx SHL 1
 static int cpu_exec_shl_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
-    cpu->VF = cpu->registers[instruction->operands[0]] & 0x80;
+    cpu->registers[0x0F] = cpu->registers[instruction->operands[0]] & 0x80;
 
     cpu->registers[instruction->operands[0]] <<= 1;
 
@@ -501,7 +498,7 @@ static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
     uint8_t x = cpu->registers[instruction->operands[0]];
     uint8_t y = cpu->registers[instruction->operands[1]];
 
-    cpu->VF = false;
+    cpu->registers[0x0F] = 0;
 
     //for each byte of n-byte sprite
     for (uint16_t i = 0; i < instruction->operands[2]; i++) {
@@ -514,7 +511,7 @@ static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
         }
 
         if (display_state & cpu->memory[cpu->I + i]) {
-            cpu->VF = true;
+            cpu->registers[0x0F] = 1;
         }
 
         //XOR onto existing screen
