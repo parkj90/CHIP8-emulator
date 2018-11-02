@@ -14,7 +14,7 @@
 
 static WINDOW *win;
 static int keyboard_input;
-pthread_mutex_t mutex_ncurses = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t mutex_ncurses = PTHREAD_MUTEX_INITIALIZER;
 
 enum key_map {
     KEY_MAP_QUIT = 'q',
@@ -57,6 +57,8 @@ void ncurses_io_init() {
 }
 
 void ncurses_io_terminate() {
+    delwin(win);
+    delwin(stdscr);
     endwin();
 }
 

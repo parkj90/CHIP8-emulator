@@ -10,7 +10,7 @@
 #include "ncurses_io.h"
 
 static bool quit_signal = false;
-pthread_mutex_t mutex_quit = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t mutex_quit = PTHREAD_MUTEX_INITIALIZER;
 
 static void *cpu_thread_function(void *cpu);
 static void *ui_thread_function(void *dummy_arg);
@@ -29,6 +29,7 @@ int main(void) {
         perror("Error: ");
         return -1;
     } 
+    fclose(rom);
 
     cpu_t *cpu = cpu_new(&ncurses_io_interface);
     if (cpu == NULL) {
