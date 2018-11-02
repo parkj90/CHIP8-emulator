@@ -14,7 +14,7 @@ typedef struct cpu_io_interface {
     //  16th bit -> f           1 - key pressed
     //   |          |           0 - key not pressed
     //   1st bit -> 0
-    uint32_t (*get_keyboard)();         //to terminate cpu_run, return value > 0xFFFF
+    uint16_t (*get_keyboard)();         //to terminate cpu_run, return value > 0xFFFF
 
     uint8_t (*wait_keypress)();         //to terminate cpu_run, return value > 0x0F
 
