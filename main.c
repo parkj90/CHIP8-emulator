@@ -85,6 +85,7 @@ static void *cpu_thread_function(void *cpu) {
             pthread_mutex_unlock(&mutex_quit);
             break;
         }
+        pthread_mutex_unlock(&mutex_quit);
 
         usleep(100);
 
