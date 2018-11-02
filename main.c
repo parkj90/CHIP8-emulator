@@ -87,10 +87,10 @@ static void *cpu_thread_function(void *cpu) {
         }
         pthread_mutex_unlock(&mutex_quit);
 
-        usleep(100);
+        usleep(3000);
 
-        us_counter++;
-        if (us_counter >= 166) {
+        us_counter += 1;
+        if (us_counter >= 6) {
             us_counter = 0;
             cpu_decrement_timers(cpu);
         }

@@ -199,6 +199,7 @@ static uint8_t ncurses_io_wait_keypress() {
             default:
                 unacceptable = true;
         }
+        keyboard_input = ERR;
         pthread_mutex_unlock(&mutex_ncurses);
     }
 
