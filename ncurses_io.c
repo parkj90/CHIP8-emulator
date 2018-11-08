@@ -9,7 +9,6 @@
 #include "cpu.h"
 #include "ncurses_io.h"
 
-#define FILL_CHAR 35
 #define CLEAR_CHAR ' '
 
 static WINDOW *win;
@@ -212,10 +211,10 @@ static bool ncurses_io_get_pixel(uint8_t x, uint8_t y) {
     bool return_value;
     pthread_mutex_lock(&mutex_ncurses);
 
-    if (mvwinch(win, y, x) == FILL_CHAR) {
-        return_value = true;
-    } else {
+    if (mvwinch(win, y, x) == CLEAR_CHAR) {
         return_value = false;
+    } else {
+        return_value = true;
     }
 
     pthread_mutex_unlock(&mutex_ncurses);
@@ -227,7 +226,7 @@ static void ncurses_io_draw_pixel(uint8_t x, uint8_t y, bool fill) {
     pthread_mutex_lock(&mutex_ncurses);
     wmove(win, y, x);
     if (fill) {
-        waddch(win, FILL_CHAR);
+        wadd_wch(win, WACS_CKBOARD);
     } else {
         waddch(win, CLEAR_CHAR);
     }
