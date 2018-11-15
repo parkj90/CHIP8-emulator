@@ -7,7 +7,7 @@
 #include "rombuffer.h"
 #include "disassembler.h"
 #include "cpu.h"
-#include "ncurses_io.h"
+#include "sdl_io.h"
 
 static bool quit_signal = false;
 static pthread_mutex_t mutex_quit = PTHREAD_MUTEX_INITIALIZER;
@@ -31,7 +31,7 @@ int main(void) {
     } 
     fclose(rom);
 
-    cpu_t *cpu = cpu_new(&ncurses_io_interface);
+    cpu_t *cpu = cpu_new(&sdl_io_interface);
     if (cpu == NULL) {
         return -1;
     }
@@ -43,7 +43,7 @@ int main(void) {
     pthread_t cpu_thread, ui_thread;
     int cpu_thread_ret, ui_thread_ret;
 
-    ncurses_io_init();
+    sdl_io_init(rom_name);
 
     ui_thread_ret = pthread_create(&ui_thread, NULL, ui_thread_function, NULL);
     if (ui_thread_ret) {
@@ -65,7 +65,7 @@ int main(void) {
 
     pthread_join(cpu_thread, (void *)&cpu_error_ptr);
 
-    ncurses_io_terminate();
+    sdl_io_terminate();
     cpu_free(cpu);
     rombuffer_free(rom_opcodes);
 
@@ -103,7 +103,7 @@ static void *cpu_thread_function(void *cpu) {
 }
 
 static void *ui_thread_function(void *dummy_arg) {
-    ncurses_ui_run();
+    sdl_ui_run();
 
     return NULL;
 }
