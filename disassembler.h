@@ -79,6 +79,7 @@ typedef struct instruction {
 //      -3: no matching operand_type
 int disassembler_dump(const rombuffer_t *opcodes);
 int disassembler_disassemble(instruction_t *instruction, const uint16_t opcode);
-int disassembler_format(char *formatted_instruction, size_t size, const instruction_t *instruction);
+int disassembler_format(char *formatted_instruction, size_t size,
+                        const instruction_t *instruction);
 
 const instruction_info_t *disassembler_lookup(uint16_t opcode);

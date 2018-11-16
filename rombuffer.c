@@ -30,7 +30,8 @@ rombuffer_t *rombuffer_read(FILE *game_f) {
     size_t returned_elements; 
     for (size_t i = 0; i < rom->length; i++) {
         if ((returned_elements = fread(&byte_buffer, 2, 1, game_f)) != 1) {
-            printf("incorrect # bytes read, returned: %zd\n", returned_elements);
+            printf("incorrect # bytes read, returned: %zd\n",
+                   returned_elements);
         }
         
         byte_buffer = ntohs(byte_buffer);

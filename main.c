@@ -74,22 +74,23 @@ int main(int argc, char *argv[]) {
 
     ui_thread_ret = pthread_create(&ui_thread, NULL, ui_thread_function, NULL);
     if (ui_thread_ret) {
-        fprintf(stderr, "error: pthread_create() returns: %d\n", ui_thread_ret);
+        fprintf(stderr, "error: pthread_create() returns: %d\n",
+                ui_thread_ret);
     }
 
-    cpu_thread_ret = pthread_create(&cpu_thread, NULL, cpu_thread_function, (void *)cpu); 
+    cpu_thread_ret = pthread_create(&cpu_thread, NULL,
+                                    cpu_thread_function, (void *)cpu); 
     if (cpu_thread_ret) {
-        fprintf(stderr, "error: pthread_create() returns: %d\n", cpu_thread_ret);
+        fprintf(stderr, "error: pthread_create() returns: %d\n",
+                cpu_thread_ret);
     }
-
-    int *cpu_error_ptr;
 
     pthread_join(ui_thread, NULL);
-
     pthread_mutex_lock(&mutex_quit);
     quit_signal = true;
     pthread_mutex_unlock(&mutex_quit);
 
+    int *cpu_error_ptr;
     pthread_join(cpu_thread, (void *)&cpu_error_ptr);
 
     sdl_io_terminate();

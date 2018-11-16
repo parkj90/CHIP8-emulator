@@ -308,7 +308,8 @@ static const instruction_info_t instruction_info_table[] = {
     }
 };
 
-static const size_t instruction_info_table_size = sizeof(instruction_info_table) / sizeof(instruction_info_table[0]);
+static const size_t instruction_info_table_size =
+    sizeof(instruction_info_table) / sizeof(instruction_info_table[0]);
 
 int disassembler_dump(const rombuffer_t *rom) {
     if (rom == NULL) {
@@ -322,7 +323,9 @@ int disassembler_dump(const rombuffer_t *rom) {
         disassembler_disassemble(&instruction, opcode);
 
         char formatted_instruction[FORMATTED_INSTRUCTION_SIZE];
-        int format_error = disassembler_format(formatted_instruction, sizeof(formatted_instruction), &instruction);
+        int format_error = disassembler_format(formatted_instruction,
+                                               sizeof(formatted_instruction),
+                                               &instruction);
         if (format_error) {
             return format_error;
         }
@@ -350,9 +353,11 @@ int disassembler_disassemble(instruction_t *instruction, const uint16_t opcode) 
     return 0;
 }
 
-int disassembler_format(char *formatted_instruction, size_t size, const instruction_t *instruction) {
+int disassembler_format(char *formatted_instruction, size_t size,
+                        const instruction_t *instruction) {
     const instruction_info_t *instruction_info = instruction->instruction_info;
-    size_t form_inst_size = snprintf(formatted_instruction, size, "%s", instruction_info->mnemonic);
+    size_t form_inst_size = snprintf(formatted_instruction, size,
+                                     "%s", instruction_info->mnemonic);
     
     const uint16_t *operands = instruction->operands;
     for (size_t i = 0; i < instruction_info->operand_count; i++) {
@@ -364,53 +369,83 @@ int disassembler_format(char *formatted_instruction, size_t size, const instruct
         size_t form_op_size;
         switch (instruction_info->operand_types[i]) {
             case OPERAND_VX:
-                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " V%x", operands[i]);
+                form_op_size = snprintf(formatted_operand,
+                                        MAX_FORMATTED_OP_SIZE,
+                                        " V%x", operands[i]);
                 break;
             case OPERAND_VY:
-                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " V%x", operands[i]);
+                form_op_size = snprintf(formatted_operand,
+                                        MAX_FORMATTED_OP_SIZE,
+                                        " V%x", operands[i]);
                 break;
             case OPERAND_N:
-                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " %x", operands[i]);
+                form_op_size = snprintf(formatted_operand,
+                                        MAX_FORMATTED_OP_SIZE,
+                                        " %x", operands[i]);
                 break;
             case OPERAND_KK:
-                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " %x", operands[i]);
+                form_op_size = snprintf(formatted_operand,
+                                        MAX_FORMATTED_OP_SIZE,
+                                        " %x", operands[i]);
                 break;
             case OPERAND_NNN:
-                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " %x", operands[i]);
+                form_op_size = snprintf(formatted_operand,
+                                        MAX_FORMATTED_OP_SIZE,
+                                        " %x", operands[i]);
                 break;
             case OPERAND_I:
-                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " I");
+                form_op_size = snprintf(formatted_operand,
+                                        MAX_FORMATTED_OP_SIZE,
+                                        " I");
                 break;
             case OPERAND_V0:
-                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " V0");
+                form_op_size = snprintf(formatted_operand,
+                                        MAX_FORMATTED_OP_SIZE,
+                                        " V0");
                 break;
             case OPERAND_DT:
-                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " DT");
+                form_op_size = snprintf(formatted_operand,
+                                        MAX_FORMATTED_OP_SIZE,
+                                        " DT");
                 break;
             case OPERAND_ST:
-                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " ST");
+                form_op_size = snprintf(formatted_operand,
+                                        MAX_FORMATTED_OP_SIZE,
+                                        " ST");
                 break;
             case OPERAND_F:
-                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " F");
+                form_op_size = snprintf(formatted_operand,
+                                        MAX_FORMATTED_OP_SIZE,
+                                        " F");
                 break;
             case OPERAND_B:
-                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " B");
+                form_op_size = snprintf(formatted_operand,
+                                        MAX_FORMATTED_OP_SIZE,
+                                        " B");
                 break;
             case OPERAND_K:
-                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " K");
+                form_op_size = snprintf(formatted_operand,
+                                        MAX_FORMATTED_OP_SIZE,
+                                        " K");
                 break;
             case OPERAND_DATA:
-                form_op_size = snprintf(formatted_operand, MAX_FORMATTED_OP_SIZE, " %x", operands[i]);
+                form_op_size = snprintf(formatted_operand,
+                                        MAX_FORMATTED_OP_SIZE,
+                                        " %x", operands[i]);
                 break;
             default:
                 return -3;
         }
 
         if (i < instruction_info->operand_count - 1) {
-            form_op_size = snprintf(formatted_operand + form_op_size, MAX_FORMATTED_OP_SIZE - form_op_size, ",");
+            form_op_size = snprintf(formatted_operand + form_op_size,
+                                    MAX_FORMATTED_OP_SIZE - form_op_size, ",");
         }
 
-        form_inst_size += snprintf(formatted_instruction + form_inst_size, size - form_inst_size, "%s", formatted_operand);
+        form_inst_size += snprintf(formatted_instruction + form_inst_size,
+                                   size - form_inst_size,
+                                   "%s",
+                                   formatted_operand);
     }
 
     return 0;

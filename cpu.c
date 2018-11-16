@@ -103,7 +103,8 @@ static int cpu_exec_ld_i_vx(cpu_t *cpu, const instruction_t *instruction);
 static int cpu_exec_ld_vx_i(cpu_t *cpu, const instruction_t *instruction);
 static int cpu_exec_data(cpu_t *cpu, const instruction_t *instruction);
 
-static int (* const exec_instruction_table[])(cpu_t *cpu, const instruction_t *instruction) = {
+static int (* const exec_instruction_table[])
+       (cpu_t *cpu, const instruction_t *instruction) = {
     [INSTRUCTION_SYS_NNN]     = cpu_exec_sys_nnn,
     [INSTRUCTION_CLS]         = cpu_exec_cls,
     [INSTRUCTION_RET]         = cpu_exec_ret,
@@ -196,8 +197,9 @@ int cpu_execute(cpu_t *cpu) {
     disassembler_disassemble(&instruction, opcode);
 
     //execute
-    int error_code;
-    if ((error_code = exec_instruction_table[instruction.instruction_info->instruction_type](cpu, &instruction))) {
+    int error_code = exec_instruction_table[instruction.instruction_info->
+                     instruction_type](cpu, &instruction);
+    if ((error_code )) {
         return error_code;
     }
 
@@ -321,7 +323,9 @@ static int cpu_exec_sne_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
 
 //skip next instruction if Vx == Vy
 static int cpu_exec_se_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
-    if (cpu->registers[instruction->operands[0]] == cpu->registers[instruction->operands[1]]) {
+    if (cpu->registers[instruction->operands[0]] == 
+        cpu->registers[instruction->operands[1]])
+    {
         cpu->pc += 2;
     }
 
@@ -350,7 +354,8 @@ static int cpu_exec_add_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
 
 //set Vx = Vy
 static int cpu_exec_ld_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
-    cpu->registers[instruction->operands[0]] = cpu->registers[instruction->operands[1]];
+    cpu->registers[instruction->operands[0]] = 
+        cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
 
@@ -359,7 +364,8 @@ static int cpu_exec_ld_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
 
 //set Vx = Vx OR Vy
 static int cpu_exec_or_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
-    cpu->registers[instruction->operands[0]] |= cpu->registers[instruction->operands[1]];
+    cpu->registers[instruction->operands[0]] |=
+        cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
 
@@ -368,7 +374,8 @@ static int cpu_exec_or_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
 
 //set Vx = Vx AND Vy
 static int cpu_exec_and_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
-    cpu->registers[instruction->operands[0]] &= cpu->registers[instruction->operands[1]];
+    cpu->registers[instruction->operands[0]] &=
+        cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
 
@@ -377,7 +384,8 @@ static int cpu_exec_and_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
 
 //set Vx = Vx XOR Vy
 static int cpu_exec_xor_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
-    cpu->registers[instruction->operands[0]] ^= cpu->registers[instruction->operands[1]];
+    cpu->registers[instruction->operands[0]] ^=
+        cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
 
@@ -386,13 +394,16 @@ static int cpu_exec_xor_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
 
 //set Vx = Vx + Vy, set VF = carry
 static int cpu_exec_add_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
-    if (cpu->registers[instruction->operands[0]] + cpu->registers[instruction->operands[1]] > 0xFF) {
+    if (cpu->registers[instruction->operands[0]] +
+        cpu->registers[instruction->operands[1]] > 0xFF)
+    {
         cpu->registers[0x0F] = 1;
     } else {
         cpu->registers[0x0F] = 0;
     }
 
-    cpu->registers[instruction->operands[0]] += cpu->registers[instruction->operands[1]];
+    cpu->registers[instruction->operands[0]] +=
+        cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
 
@@ -401,13 +412,16 @@ static int cpu_exec_add_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
 
 //set Vx = Vx - Vy, set VF = NOT borrow
 static int cpu_exec_sub_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
-    if (cpu->registers[instruction->operands[0]] > cpu->registers[instruction->operands[1]]) {
+    if (cpu->registers[instruction->operands[0]] >
+        cpu->registers[instruction->operands[1]])
+    {
         cpu->registers[0x0F] = 1;
     } else {
         cpu->registers[0x0F] = 0;
     }
 
-    cpu->registers[instruction->operands[0]] -= cpu->registers[instruction->operands[1]];
+    cpu->registers[instruction->operands[0]] -=
+        cpu->registers[instruction->operands[1]];
 
     cpu->pc += 2;
 
@@ -427,13 +441,17 @@ static int cpu_exec_shr_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
 
 //set Vx = Vy - Vx, set VF = NOT borrow
 static int cpu_exec_subn_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
-    if (cpu->registers[instruction->operands[1]] > cpu->registers[instruction->operands[0]]) {
+    if (cpu->registers[instruction->operands[1]] >
+        cpu->registers[instruction->operands[0]])
+    {
         cpu->registers[0x0F] = 1;
     } else {
         cpu->registers[0x0F] = 0;
     }
 
-    cpu->registers[instruction->operands[0]] = cpu->registers[instruction->operands[1]] - cpu->registers[instruction->operands[0]];
+    cpu->registers[instruction->operands[0]] =
+        cpu->registers[instruction->operands[1]] -
+        cpu->registers[instruction->operands[0]];
 
     cpu->pc += 2;
 
@@ -453,7 +471,9 @@ static int cpu_exec_shl_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
 
 //skip next instruction if Vx != Vy
 static int cpu_exec_sne_vx_vy(cpu_t *cpu, const instruction_t *instruction) {
-    if (cpu->registers[instruction->operands[0]] != cpu->registers[instruction->operands[1]]) {
+    if (cpu->registers[instruction->operands[0]] !=
+        cpu->registers[instruction->operands[1]])
+    {
         cpu->pc += 2;
     }
 
@@ -484,7 +504,8 @@ static int cpu_exec_jp_v0_nnn(cpu_t *cpu, const instruction_t *instruction) {
 
 //set Vx = random byte and kk
 static int cpu_exec_rnd_vx_kk(cpu_t *cpu, const instruction_t *instruction) {
-    cpu->registers[instruction->operands[0]] = (rand() & 0xFF) & instruction->operands[1];
+    cpu->registers[instruction->operands[0]] = 
+        (rand() & 0xFF) & instruction->operands[1];
 
     cpu->pc += 2;
 
@@ -504,7 +525,8 @@ static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
         uint8_t display_state = 0x00;
         for (uint8_t j = 0; j < SPRITE_WIDTH; j++) {
             display_state <<= 1;
-            if (cpu->cpu_io_interface->get_pixel((x + j) % DISPLAY_WIDTH, (y + i) % DISPLAY_HEIGHT)) {
+            if (cpu->cpu_io_interface->get_pixel((x + j) % DISPLAY_WIDTH,
+                                                 (y + i) % DISPLAY_HEIGHT)) {
                 display_state |= 1;
             }
         }
@@ -517,9 +539,13 @@ static int cpu_exec_drw_vx_vy_n(cpu_t *cpu, const instruction_t *instruction) {
         display_state ^= cpu->memory[cpu->I + i];
         for (uint8_t j = 0; j < SPRITE_WIDTH; j++) {
             if (display_state & (0x01 << (7 - j))) {
-                cpu->cpu_io_interface->draw_pixel((x + j) % DISPLAY_WIDTH, (y + i) % DISPLAY_HEIGHT, true);
+                cpu->cpu_io_interface->draw_pixel((x + j) % DISPLAY_WIDTH,
+                                                  (y + i) % DISPLAY_HEIGHT,
+                                                  true);
             } else {
-                cpu->cpu_io_interface->draw_pixel((x + j) % DISPLAY_WIDTH, (y + i) % DISPLAY_HEIGHT, false);
+                cpu->cpu_io_interface->draw_pixel((x + j) % DISPLAY_WIDTH,
+                                                  (y + i) % DISPLAY_HEIGHT,
+                                                  false);
             }
         }
     }
