@@ -53,12 +53,17 @@ int main(int argc, char *argv[]) {
     } 
     fclose(rom);
 
+    // if -d option enabled, print disassembled instructions
+    // and terminate emulator
     if (disassembly) {
-        //disassembly mode not yet enabled
-        fprintf(stderr, "Error: disassembly mode not yet implemented\n");
-        exit(EXIT_FAILURE);
+        printf("%s disassembly: \n", rom_name);
+        disassembler_dump(rom_opcodes);
+        rombuffer_free(rom_opcodes);
+
+        exit(EXIT_SUCCESS);
     }
 
+    // begin default emulator behavior
     cpu_t *cpu = cpu_new(&sdl_io_interface);
     if (cpu == NULL) {
         fprintf(stderr, "Error: unable to initialize CPU\n");
