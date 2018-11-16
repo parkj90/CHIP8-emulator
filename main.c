@@ -43,13 +43,13 @@ int main(int argc, char *argv[]) {
     FILE *rom = fopen(rom_path, "r");
     if (rom == NULL) {
         perror("Error: ");
-        return -1;
+        exit(EXIT_FAILURE);
     }
 
     rombuffer_t *rom_opcodes = rombuffer_read(rom);
     if (rom_opcodes == NULL) {
         perror("Error: ");
-        return -1;
+        exit(EXIT_FAILURE);
     } 
     fclose(rom);
 
@@ -61,7 +61,8 @@ int main(int argc, char *argv[]) {
 
     cpu_t *cpu = cpu_new(&sdl_io_interface);
     if (cpu == NULL) {
-        return -1;
+        fprintf(stderr, "Error: unable to initialize CPU\n");
+        exit(EXIT_FAILURE);
     }
 
     cpu_load(cpu, rom_opcodes);
@@ -96,10 +97,11 @@ int main(int argc, char *argv[]) {
     rombuffer_free(rom_opcodes);
 
     if (*cpu_error_ptr) {
-        printf("%d\n", *cpu_error_ptr);
+        fprintf(stderr, "CPU error: %d\n", *cpu_error_ptr);
+        exit(EXIT_FAILURE);
     }
 
-    return *cpu_error_ptr;
+    exit(EXIT_SUCCESS);
 }
 
 static void *cpu_thread_function(void *cpu) {
