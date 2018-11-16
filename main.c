@@ -1,7 +1,9 @@
 //main.c
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <pthread.h>
 #include <unistd.h>
 #include "rombuffer.h"
@@ -9,16 +11,36 @@
 #include "cpu.h"
 #include "sdl_io.h"
 
+#define ROM_DIRECTORY "../c8games/"
+
 static bool quit_signal = false;
 static pthread_mutex_t mutex_quit = PTHREAD_MUTEX_INITIALIZER;
 
 static void *cpu_thread_function(void *cpu);
 static void *ui_thread_function(void *dummy_arg);
 
-int main(void) {
-    FILE *rom = fopen("../c8games/CONNECT4", "r");
-    const char *rom_name = "CONNECT4";
+int main(int argc, char *argv[]) {
+    int opt;
+    bool disassembly = false;
+    while ((opt = getopt(argc, argv, "d")) != -1) {
+        if (opt == 'd') {
+            disassembly = true;
+        } else {
+            fprintf(stderr, "Usage: %s [-l] rom\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
+    }
 
+    if (optind >= argc) {
+        fprintf(stderr, "Usage: %s [-l] rom\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    const char *rom_name = argv[optind];
+    char rom_path[strlen(rom_name) + strlen(ROM_DIRECTORY) + 1];
+    sprintf(rom_path, "%s%s", ROM_DIRECTORY, rom_name);
+
+    FILE *rom = fopen(rom_path, "r");
     if (rom == NULL) {
         perror("Error: ");
         return -1;
@@ -31,12 +53,16 @@ int main(void) {
     } 
     fclose(rom);
 
+    if (disassembly) {
+        //disassembly mode not yet enabled
+        fprintf(stderr, "Error: disassembly mode not yet implemented\n");
+        exit(EXIT_FAILURE);
+    }
+
     cpu_t *cpu = cpu_new(&sdl_io_interface);
     if (cpu == NULL) {
         return -1;
     }
-
-    printf("Starting %s...\n", rom_name);
 
     cpu_load(cpu, rom_opcodes);
 
